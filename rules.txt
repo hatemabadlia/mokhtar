@@ -1,0 +1,7 @@
+match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      // الطالب ينشئ/يحدّث ملفه هو فقط (اسم، مستوى، ...)؛ الحذف للإدارة فقط
+      allow create, update: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow delete: if isAdmin();
+    }
