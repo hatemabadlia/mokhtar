@@ -189,6 +189,9 @@
   background: rgba(178, 58, 46, 0.1); color: #8c2a20;
   border: 1px solid rgba(178, 58, 46, 0.3);
 }
+.naj-status.pending {
+  background: rgba(227, 162, 60, 0.16); color: #7a5612; border: 1px solid rgba(227, 162, 60, 0.45);
+}
 .naj-status.open {
   background: rgba(47, 110, 79, 0.1); color: #255c41;
   border: 1px solid rgba(47, 110, 79, 0.3);
@@ -221,6 +224,8 @@
 .naj-btn-ghost { border: 1.5px solid var(--line); background: transparent; color: var(--ink-teal); }
 .naj-btn-ghost:hover { border-color: var(--gold); color: var(--crimson); }
 .naj-btn-block { width: 100%; }
+.naj-btn-wa { background: #25D366; color: #fff; text-decoration: none; }
+.naj-btn-wa:hover { background: #1ebe5a; transform: translateY(-1px); color: #fff; }
 
 /* ===== بطاقات الدروس ===== */
 .naj-cards {

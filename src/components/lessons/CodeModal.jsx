@@ -1,5 +1,5 @@
 import React from 'react';
-import { unlockGroup } from '../../firebase/access';
+import { persistUnlock } from '../../lib/access';
 import Modal from './Modal';
 import CodeForm from './CodeForm';
 import './lessons.css';
@@ -8,8 +8,9 @@ import './lessons.css';
  * نافذة "لدي رمز" — تُفتح لمادة واحدة (أو مجموعة داخل المادة) وتُدخل مفتاحها فقط:
  *   level_module_trimester | level_module_unit | level_module (مادة كاملة)
  * group = { label, moduleLabel, levelLabel, level, module, field, fieldValue, isBac, key, moduleKey }
+ * user: المستخدم المسجّل (لحفظ الفتح في Firestore) — onUnlocked(key) يُعلم الصفحة الأم.
  */
-export default function CodeModal({ group, onClose }) {
+export default function CodeModal({ group, user, onUnlocked, onClose }) {
   return (
     <Modal title="إدخال رمز الوصول" subtitle={`${group.levelLabel} · ${group.moduleLabel} · ${group.label}`} onClose={onClose}>
       <p className="naj-modal-hint">
@@ -24,8 +25,10 @@ export default function CodeModal({ group, onClose }) {
           isBac: group.isBac,
         }}
         onCancel={onClose}
-        onSuccess={(res) => {
-          unlockGroup(res.key);
+        onSuccess={async (res) => {
+          // localStorage فورًا + Firestore (users/{uid}.unlockedGroups) حتى يبقى الفتح على كل الأجهزة
+          await persistUnlock(user, res.key);
+          onUnlocked?.(res.key);
           onClose();
         }}
       />

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { fetchLessonsByLevel } from '../../firebase/lessonsService';
 import { SERVICES } from './services';
@@ -43,6 +43,7 @@ export default function Progress() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unlockedGroups, setUnlockedGroups] = useState([]); // مفاتيح النظام الجديد من Firestore
+  const [quizResults, setQuizResults] = useState([]); // نتائج الاختبارات التفاعلية (quizResults)
 
   useEffect(() => {
     if (!user || !lessonsLevel) {
@@ -62,6 +63,14 @@ export default function Progress() {
         }
       } catch {
         // دون اتصال / صلاحيات — نعتمد على localStorage فقط
+      }
+
+      // نتائج الاختبارات التفاعلية لهذا المستخدم
+      try {
+        const rs = await getDocs(query(collection(db, 'quizResults'), where('uid', '==', user.uid)));
+        if (!cancelled) setQuizResults(rs.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch {
+        // لا نتائج / صلاحيات — نتجاوز
       }
 
       try {
@@ -147,6 +156,15 @@ export default function Progress() {
     .filter((r) => r.lesson);
 
   const levelFull = LEVEL_FULL_LABELS[lessonsLevel] || '';
+
+  // ملخّص الاختبارات التفاعلية (لمستوى الطالب الحالي)
+  const levelQuiz = quizResults.filter((r) => !r.level || r.level === lessonsLevel);
+  const quizAvg = levelQuiz.length
+    ? Math.round(levelQuiz.reduce((a, r) => a + (Number(r.pct) || 0), 0) / levelQuiz.length)
+    : 0;
+  const recentQuiz = [...levelQuiz]
+    .sort((a, b) => (b.finishedAt?.seconds || 0) - (a.finishedAt?.seconds || 0))
+    .slice(0, 5);
 
   return (
 <div className="progress" dir="rtl">
@@ -316,6 +334,33 @@ export default function Progress() {
 
           <section className="pr-card">
             <div className="pr-card-title">
+              <span className="ct-ico">🧠</span>
+              <h2>الاختبارات التفاعلية</h2>
+              {levelQuiz.length > 0 && (
+                <span className="pr-quiz-avg">{levelQuiz.length} اختبار · معدّل {quizAvg}%</span>
+              )}
+            </div>
+            {recentQuiz.length === 0 ? (
+              <div className="recent-empty">
+                لم تُنجز أي اختبار بعد — <Link to="/app/quiz" className="group-link">ابدأ اختبارًا قصيرًا ←</Link>
+              </div>
+            ) : (
+              <ul className="recent-list">
+                {recentQuiz.map((r) => (
+                  <li key={r.id} className="recent-item">
+                    <Link to={`/app/quiz/${r.quizId}`} className="recent-link">
+                      <span className={`quiz-pct${(r.pct || 0) >= 50 ? ' ok' : ' low'}`}>{r.pct ?? 0}%</span>
+                      <span className="recent-name">{r.title || 'اختبار'}</span>
+                      <span className="recent-time">{r.score}/{r.total} · {r.attempts || 1}×</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="pr-card">
+            <div className="pr-card-title">
               <span className="ct-ico">🕘</span>
               <h2>آخر ما شاهدته</h2>
             </div>
@@ -419,6 +464,10 @@ const css = `
 .group-meta{display:flex;align-items:center;justify-content:space-between;margin-top:9px;font-size:12.5px;color:#5c584c;gap:10px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;direction:ltr;}
 .group-link{font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl;font-weight:700;color:var(--crimson,#B23A2E);}
 
+.pr-quiz-avg{margin-inline-start:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-teal,#0E3B36);background:var(--parchment-dim,#EFE3C8);border-radius:999px;padding:5px 12px;}
+.quiz-pct{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;flex-shrink:0;}
+.quiz-pct.ok{background:rgba(46,139,87,.12);color:#1f6b41;}
+.quiz-pct.low{background:rgba(178,58,46,.1);color:#8c2a20;}
 .recent-list{list-style:none;margin:0;padding:0;}
 .recent-item{border-bottom:1px dashed var(--line,#e2d9c8);}
 .recent-item:last-child{border-bottom:0;}

@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { submitAccessRequest } from '../../firebase/lessonsService';
+import useAuth from '../../hooks/useAuth';
 import Modal from './Modal';
 import './lessons.css';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// هاتف جزائري: 10 أرقام يبدأ بـ 05/06/07 (مع قبول +213)
+const PHONE_RE = /^(0[5-7]\d{8}|(\+|00)?213[5-7]\d{8})$/;
+
+// واتساب — هنا يتواصل الطالب معنا لتأكيد الدفع واستلام رمز التفعيل
+const WHATSAPP_URL = 'https://wa.me/qr/N7P2QORNYNBQO1';
 
 /**
  * نافذة "اطلب الوصول" — طلب خاص بمجموعة واحدة داخل مادة واحدة:
@@ -11,12 +17,22 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * - البكالوريا:     { level, module, unit }
  * group = { label, moduleLabel, levelLabel, level, module, field, fieldValue }
  */
-export default function RequestModal({ group, onClose }) {
+export default function RequestModal({ group, existingRequest = null, onSubmitted, onClose }) {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+  // إن كان هناك طلب سابق قيد المراجعة نعرض حالته مباشرة بدل نموذج جديد
+  const [done, setDone] = useState(!!existingRequest);
+
+  // تعبئة الاسم والبريد من الحساب المسجّل (تبقى قابلة للتعديل)
+  useEffect(() => {
+    if (!user) return;
+    setName((v) => v || user.displayName || '');
+    setEmail((v) => v || user.email || '');
+  }, [user]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,16 +46,24 @@ export default function RequestModal({ group, onClose }) {
       setError('من فضلك أدخل بريدًا إلكترونيًا صحيحًا.');
       return;
     }
+    if (!PHONE_RE.test(phone.replace(/\s+/g, ''))) {
+      setError('أدخل رقم هاتف (واتساب) صحيحًا — مثال: 0550123456');
+      return;
+    }
 
     setLoading(true);
     try {
       await submitAccessRequest({
+        uid: user?.uid,
         name,
         email,
+        phone,
         level: group.level,
         module: group.module,
         [group.field]: group.fieldValue,
+        groupKey: group.key,
       });
+      onSubmitted?.(group.key);
       setDone(true);
     } catch {
       setError('تعذّر إرسال الطلب — حاول مرة أخرى.');
@@ -52,12 +76,21 @@ export default function RequestModal({ group, onClose }) {
     <Modal title="طلب الوصول" subtitle={`${group.levelLabel} · ${group.moduleLabel} · ${group.label}`} onClose={onClose}>
       {done ? (
         <div className="naj-done">
-          <div className="naj-done-ico">✅</div>
-          <p>تم إرسال طلب الوصول</p>
+          <div className="naj-done-ico">{existingRequest ? '⏳' : '✅'}</div>
+          <p>{existingRequest ? 'طلبك قيد المراجعة' : 'تم إرسال طلب الوصول'}</p>
           <p className="naj-done-sub">
-            سيتم فتح التعلم بعد موافقة المشرف أو إرسال رمز لك.
+            تواصل معنا على واتساب لتأكيد الدفع. بعد التأكيد يُفتح القسم في حسابك مباشرة
+            (أو نرسل لك رمزًا تُدخله من «لدي رمز»).
           </p>
-          <button type="button" className="naj-btn naj-btn-gold" onClick={onClose}>
+          <a
+            className="naj-btn naj-btn-wa naj-btn-block"
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            💬 تواصل معنا عبر واتساب
+          </a>
+          <button type="button" className="naj-btn naj-btn-ghost" onClick={onClose}>
             حسنًا
           </button>
         </div>
@@ -92,6 +125,22 @@ export default function RequestModal({ group, onClose }) {
               onChange={(e) => {
                 setError('');
                 setEmail(e.target.value);
+              }}
+            />
+          </label>
+
+          <label className="naj-field">
+            <span className="naj-label">رقم الهاتف (واتساب)</span>
+            <input
+              className="naj-input"
+              type="tel"
+              dir="ltr"
+              inputMode="numeric"
+              placeholder="0550123456"
+              value={phone}
+              onChange={(e) => {
+                setError('');
+                setPhone(e.target.value);
               }}
             />
           </label>

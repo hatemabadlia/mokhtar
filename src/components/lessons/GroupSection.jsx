@@ -9,17 +9,24 @@ import './lessons.css';
  * يعرض حالة القسم 🔓/🔒 وأزرار "لدي رمز" و "اطلب الوصول" عندما يكون مقفلًا.
  * group = { label, level, module, moduleLabel, field, fieldValue, isBac, key, moduleKey, emptyText }
  *    key: level_module_group  —  moduleKey: level_module (فتح المادة كلها)
+ * unlockedGroups: مفاتيح الفتح المحفوظة في Firestore للمستخدم (تُقرأ في LessonsContent).
  */
-export default function GroupSection({ group, onRequest, onCode }) {
-  const unlocked = isGroupUnlocked(group.key) || isGroupUnlocked(group.moduleKey);
+export default function GroupSection({ group, unlockedGroups = [], pendingRequest = null, onRequest, onCode }) {
+  // مفتوح إذا وُجد المفتاح محليًا (localStorage) أو في Firestore (unlockedGroups)،
+  // بمفتاح المجموعة أو بمفتاح «المادة كاملة».
+  const unlocked =
+    isGroupUnlocked(group.key) ||
+    isGroupUnlocked(group.moduleKey) ||
+    unlockedGroups.includes(group.key) ||
+    unlockedGroups.includes(group.moduleKey);
 
   return (
     <section className={`naj-section${unlocked ? ' open' : ' locked'}`}>
       <header className="naj-section-head">
         <div className="naj-section-title">
           <h2>{group.label}</h2>
-          <span className={`naj-status${unlocked ? ' open' : ' locked'}`}>
-            {unlocked ? '🔓 مفتوح' : '🔒 مقفل'}
+          <span className={`naj-status${unlocked ? ' open' : pendingRequest ? ' pending' : ' locked'}`}>
+            {unlocked ? '🔓 مفتوح' : pendingRequest ? '⏳ قيد المراجعة' : '🔒 مقفل'}
           </span>
         </div>
 
@@ -29,7 +36,7 @@ export default function GroupSection({ group, onRequest, onCode }) {
               لدي رمز
             </button>
             <button type="button" className="naj-btn naj-btn-gold" onClick={() => onRequest(group)}>
-              اطلب الوصول
+              {pendingRequest ? 'حالة الطلب' : 'اطلب الوصول'}
             </button>
           </div>
         )}

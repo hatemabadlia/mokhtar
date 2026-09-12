@@ -8,14 +8,15 @@ import DashboardLessons from './components/dashboard/DashboardLessons';
 import Progress from './components/dashboard/Progress';
 import Live from './components/dashboard/Live';
 import Quiz from './components/dashboard/Quiz';
+import QuizPlay from './components/dashboard/QuizPlay';
 import Exams from './components/dashboard/Exams';
+import ExamViewer from './components/dashboard/ExamViewer';
 import Profile from './components/dashboard/Profile';
 
 import RequireAuth from './components/RequireAuth';
 import Onboarding from './components/Onboarding';
 
 // واجهة المتعلّم — المكتبة والمشاهدة (محمية بتسجيل الدخول)
-import LevelLessonsPage from './components/lessons/LevelLessonsPage';
 import WatchLesson from './components/lessons/WatchLesson';
 
 export default function App() {
@@ -25,15 +26,8 @@ export default function App() {
         {/* الصفحة الرئيسية — الصفحة التسويقية (بلا تسجيل دخول) */}
         <Route path="/" element={<LmokhLanding />} />
 
-        {/* الدروس والمشاهدة — فقط بعد تسجيل الدخول */}
-        <Route
-          path="/level/:level"
-          element={
-            <RequireAuth>
-              <LevelLessonsPage />
-            </RequireAuth>
-          }
-        />
+        {/* الدروس داخل لوحة التحكم — الرابط القديم /level/:level يُحوَّل إلى /app/lessons */}
+        <Route path="/level/:level" element={<Navigate to="/app/lessons" replace />} />
         <Route
           path="/watch/:id"
           element={
@@ -54,7 +48,9 @@ export default function App() {
           <Route path="progress" element={<Progress />} />
           <Route path="live" element={<Live />} />
           <Route path="quiz" element={<Quiz />} />
+          <Route path="quiz/:id" element={<QuizPlay />} />
           <Route path="exams" element={<Exams />} />
+          <Route path="exams/:id" element={<ExamViewer />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 

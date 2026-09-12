@@ -32,7 +32,7 @@ export async function fetchLessonById(id) {
  * - غير البكالوريا: { name, email, level, module, trimester, status, createdAt }
  * - البكالوريا:     { name, email, level, module, unit, status, createdAt }
  */
-export async function submitAccessRequest({ name, email, level, module, trimester, unit }) {
+export async function submitAccessRequest({ uid, name, email, phone, level, module, trimester, unit, groupKey }) {
   const payload = {
     name: name.trim(),
     email: email.trim(),
@@ -41,10 +41,26 @@ export async function submitAccessRequest({ name, email, level, module, trimeste
     status: 'pending',
     createdAt: serverTimestamp(),
   };
+  // معرّف الحساب حتى يربط المشرف الطلب بالطالب، ويفتح له القسم مباشرة عند الموافقة
+  if (uid) payload.uid = uid;
+  // رقم الهاتف (واتساب) — للتواصل وتأكيد الدفع
+  if (phone) payload.phone = String(phone).replace(/\s+/g, '');
+  // مفتاح المجموعة المطلوبة (level_module_group) لمطابقة الحالة في واجهة الطالب
+  if (groupKey) payload.groupKey = groupKey;
   if (level === 'bac') {
     if (unit) payload.unit = unit;
   } else if (trimester) {
     payload.trimester = trimester;
   }
   return addDoc(collection(db, 'accessRequests'), payload);
+}
+/**
+ * طلبات الوصول الخاصة بالمستخدم (لعرض «قيد المراجعة» ومنع التكرار).
+ * القواعد تسمح للطالب بقراءة طلباته فقط (uid == auth.uid).
+ */
+export async function fetchMyAccessRequests(uid) {
+  if (!uid) return [];
+  const q = query(collection(db, 'accessRequests'), where('uid', '==', uid));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }

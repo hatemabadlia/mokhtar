@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 // Prefix used for the offline grant in localStorage.
@@ -94,8 +94,9 @@ export async function persistUnlock(user, key) {
   unlockGroup(key);
   if (user?.uid && key) {
     try {
-      await updateDoc(doc(db, 'users', user.uid), { unlockedGroups: arrayUnion(key) });
-    } catch (e) {
+      // merge حتى لا يفشل إن لم يكن مستند المستخدم موجودًا بعد
+      await setDoc(doc(db, 'users', user.uid), { unlockedGroups: arrayUnion(key) }, { merge: true });
+    } catch {
       // القواعد/الشبكة — الفتح المحلي يكفي للاستمرار
     }
   }

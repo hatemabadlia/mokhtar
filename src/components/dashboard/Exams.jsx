@@ -1,31 +1,49 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { SERVICES } from './services';
+import {
+  normalizeLessonsLevel,
+  MODULE_LABELS,
+  MODULE_ICONS,
+  TRIMESTER_LABELS,
+  unitSortValue,
+  lessonCreatedAtMs,
+} from '../../data/platform';
 
-const DIFFICULTY_LABELS = {
-  easy: 'سهل',
-  medium: 'متوسط',
-  hard: 'صعب',
+// نوع الملف كما يرفعه المشرف (AdminExamUpload → exams.type)
+const TYPE_LABELS = {
+  exam: 'اختبار',
+  quiz: 'فرض',
 };
 
-const SUBJECTS = [
-  { id: 'math', name: 'رياضيات', icon: '∑' },
-  { id: 'physics', name: 'فيزياء', icon: '⚛' },
-];
+const SUBJECTS = ['math', 'physics'].map((id) => ({
+  id,
+  name: MODULE_LABELS[id],
+  icon: MODULE_ICONS[id],
+}));
 
+/**
+ * التمارين والامتحانات — /app/exams
+ * يقرأ مجموعة `exams` التي يرفعها المشرف:
+ *   { title, description, level ('4am'|'1as'|'2as'|'bac'), module ('math'|'physics'),
+ *     type ('exam'|'quiz'), trimester | unit, pdfURL, createdAt }
+ * المستوى المحفوظ للمستخدم (BEM/1AS/…) يُحوَّل إلى صيغة Firestore عبر normalizeLessonsLevel.
+ */
 export default function Exams() {
   const serviceMeta = SERVICES.find((x) => x.id === 'exams');
-  const { level } = useOutletContext() || {};
+  const { level: rawLevel } = useOutletContext() || {};
+  const level = normalizeLessonsLevel(rawLevel);
+  const isBac = level === 'bac';
 
   const [subject, setSubject] = useState(null); // 'math' | 'physics' | null
   const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [difficultyFilter, setDifficultyFilter] = useState('all');
-  const [unitFilter, setUnitFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [groupFilter, setGroupFilter] = useState('all'); // فصل أو وحدة
 
   useEffect(() => {
     if (!subject || !level) return;
@@ -33,20 +51,22 @@ export default function Exams() {
     let cancelled = false;
     setLoading(true);
     setError('');
-    setDifficultyFilter('all');
-    setUnitFilter('all');
+    setTypeFilter('all');
+    setGroupFilter('all');
 
     (async () => {
       try {
         const q = query(
-          collection(db, 'examPapers'),
-          where('subject', '==', subject),
+          collection(db, 'exams'),
+          where('module', '==', subject),
           where('level', '==', level)
         );
         const snap = await getDocs(q);
         if (cancelled) return;
-        setPapers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      } catch (err) {
+        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        items.sort((a, b) => lessonCreatedAtMs(b) - lessonCreatedAtMs(a));
+        setPapers(items);
+      } catch {
         if (!cancelled) setError('تعذّر تحميل المواضيع — حاول مرة أخرى.');
       } finally {
         if (!cancelled) setLoading(false);
@@ -56,18 +76,24 @@ export default function Exams() {
     return () => { cancelled = true; };
   }, [subject, level]);
 
-  const units = useMemo(() => {
-    const set = new Set(papers.map((p) => p.unit).filter(Boolean));
-    return Array.from(set);
-  }, [papers]);
+  // قيمة المجموعة (فصل أو وحدة) وتسميتها لكل ملف
+  const groupOf = (p) => (isBac ? String(p.unit || '').trim() : p.trimester || '');
+  const groupLabel = (v) => (isBac ? v : TRIMESTER_LABELS[v] || v);
+
+  const groups = useMemo(() => {
+    const set = new Set(papers.map((p) => (isBac ? String(p.unit || '').trim() : p.trimester || '')).filter(Boolean));
+    const arr = Array.from(set);
+    return isBac ? arr.sort((a, b) => unitSortValue(a) - unitSortValue(b)) : arr.sort();
+  }, [papers, isBac]);
 
   const filteredPapers = useMemo(() => {
     return papers.filter((p) => {
-      if (difficultyFilter !== 'all' && p.difficulty !== difficultyFilter) return false;
-      if (unitFilter !== 'all' && p.unit !== unitFilter) return false;
+      if (typeFilter !== 'all' && p.type !== typeFilter) return false;
+      const g = isBac ? String(p.unit || '').trim() : p.trimester || '';
+      if (groupFilter !== 'all' && g !== groupFilter) return false;
       return true;
     });
-  }, [papers, difficultyFilter, unitFilter]);
+  }, [papers, typeFilter, groupFilter, isBac]);
 
   return (
     <div className="exams" dir="rtl">
@@ -106,27 +132,27 @@ export default function Exams() {
               ← تغيير المادة
             </button>
             <span className="current-subject">
-              {SUBJECTS.find((s) => s.id === subject)?.icon} {SUBJECTS.find((s) => s.id === subject)?.name}
+              {MODULE_ICONS[subject]} {MODULE_LABELS[subject]}
             </span>
           </div>
 
           <div className="filters">
             <div className="filter-group">
-              <span className="filter-label">الصعوبة</span>
+              <span className="filter-label">النوع</span>
               <div className="chip-row">
                 <button
                   type="button"
-                  className={`chip-btn${difficultyFilter === 'all' ? ' active' : ''}`}
-                  onClick={() => setDifficultyFilter('all')}
+                  className={`chip-btn${typeFilter === 'all' ? ' active' : ''}`}
+                  onClick={() => setTypeFilter('all')}
                 >
                   الكل
                 </button>
-                {Object.entries(DIFFICULTY_LABELS).map(([key, label]) => (
+                {Object.entries(TYPE_LABELS).map(([key, label]) => (
                   <button
                     key={key}
                     type="button"
-                    className={`chip-btn${difficultyFilter === key ? ' active' : ''}`}
-                    onClick={() => setDifficultyFilter(key)}
+                    className={`chip-btn${typeFilter === key ? ' active' : ''}`}
+                    onClick={() => setTypeFilter(key)}
                   >
                     {label}
                   </button>
@@ -134,13 +160,13 @@ export default function Exams() {
               </div>
             </div>
 
-            {units.length > 0 && (
+            {groups.length > 0 && (
               <div className="filter-group">
-                <span className="filter-label">الوحدة</span>
-                <select className="unit-select" value={unitFilter} onChange={(e) => setUnitFilter(e.target.value)}>
-                  <option value="all">كل الوحدات</option>
-                  {units.map((u) => (
-                    <option key={u} value={u}>{u}</option>
+                <span className="filter-label">{isBac ? 'الوحدة' : 'الفصل'}</span>
+                <select className="unit-select" value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
+                  <option value="all">{isBac ? 'كل الوحدات' : 'كل الفصول'}</option>
+                  {groups.map((g) => (
+                    <option key={g} value={g}>{groupLabel(g)}</option>
                   ))}
                 </select>
               </div>
@@ -166,26 +192,22 @@ export default function Exams() {
                 <div className="paper-card" key={p.id}>
                   <div className="paper-top">
                     <div className="paper-title">{p.title}</div>
-                    {p.difficulty && (
-                      <span className={`diff-tag diff-${p.difficulty}`}>
-                        {DIFFICULTY_LABELS[p.difficulty] || p.difficulty}
+                    {p.type && (
+                      <span className={`type-tag type-${p.type}`}>
+                        {TYPE_LABELS[p.type] || p.type}
                       </span>
                     )}
                   </div>
+                  {p.description && <p className="paper-desc">{p.description}</p>}
                   <div className="paper-meta">
-                    {p.unit && <span className="meta-tag">{p.unit}</span>}
-                    {p.year && <span className="meta-tag">{p.year}</span>}
+                    {groupOf(p) && <span className="meta-tag">{groupLabel(groupOf(p))}</span>}
+                    {p.fileName && <span className="meta-tag" dir="ltr">PDF</span>}
                   </div>
                   <div className="paper-actions">
-                    {p.pdfUrl && (
-                      <a href={p.pdfUrl} target="_blank" rel="noopener noreferrer" className="paper-btn primary">
-                        تحميل الموضوع
-                      </a>
-                    )}
-                    {p.correctionUrl && (
-                      <a href={p.correctionUrl} target="_blank" rel="noopener noreferrer" className="paper-btn">
-                        تحميل التصحيح
-                      </a>
+                    {p.pdfURL && (
+                      <Link to={`/app/exams/${p.id}`} className="paper-btn primary">
+                        📖 قراءة الموضوع
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -269,13 +291,13 @@ const css = `
 .paper-card{background:#fffdf6;border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;}
 .paper-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;}
 .paper-title{font-family:'Aref Ruqaa',serif;font-size:18px;color:var(--ink-teal);font-weight:700;}
-.diff-tag{
-  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;padding:4px 12px;
-  border-radius:999px;flex-shrink:0;letter-spacing:.05em;
+.type-tag{
+  font-size:11px;font-weight:700;padding:4px 12px;
+  border-radius:999px;flex-shrink:0;
 }
-.diff-easy{background:rgba(47,110,79,0.1);color:#255c41;}
-.diff-medium{background:rgba(227,162,60,0.15);color:#7a5612;}
-.diff-hard{background:rgba(178,58,46,0.1);color:#8c2a20;}
+.type-exam{background:rgba(14,59,54,0.1);color:var(--ink-teal);}
+.type-quiz{background:rgba(227,162,60,0.15);color:#7a5612;}
+.paper-desc{font-size:13px;color:#5c584c;line-height:1.7;margin:0 0 10px;}
 
 .paper-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
 .meta-tag{

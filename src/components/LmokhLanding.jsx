@@ -1,12 +1,19 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
 
 export default function LmokhLanding() {
   return (
-    <div dir="rtl" style={{fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>
+    <div dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-      <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+      <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossOrigin="true"
+      />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
       <style>{`
 
   :root{
@@ -127,6 +134,20 @@ export default function LmokhLanding() {
   .seal-inner .star{color:var(--gold-bright); font-size:26px; margin-bottom:6px;}
   .seal-inner .word{font-family:'Aref Ruqaa', serif; font-size:34px; color:var(--parchment); font-weight:700;}
   .seal-inner .sub{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--gold-bright); letter-spacing:0.15em; margin-top:8px;}
+  .seal-inner{ overflow:hidden; }
+.teacher-photo{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:top center;
+}
+.seal-caption{
+  position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:6px; white-space:nowrap;
+  background:rgba(9,40,36,0.78); backdrop-filter:blur(4px);
+  padding:6px 16px; border-radius:999px;
+  font-family:'IBM Plex Mono', monospace; font-size:11px;
+  color:var(--gold-bright); letter-spacing:0.04em; z-index:2;
+}
+.seal-caption .star{ font-size:12px; }
   .seal-float{
     position:absolute; width:76px; height:76px; border-radius:50%;
     background:var(--crimson); color:var(--parchment); display:flex; align-items:center; justify-content:center;
@@ -301,317 +322,493 @@ export default function LmokhLanding() {
 
       <div className="grain"></div>
 
+      <div className="grain"></div>
 
-<div className="grain"></div>
+      <nav>
+        <div className="wrap">
+          <div className="logo">
+            <div className="logo-mark">م</div>
+            <div className="logo-text">المخ</div>
+          </div>
+          <div className="nav-links">
+            <a href="#about">قصتنا</a>
+            <a href="#streams">الشعب</a>
+            <a href="#features">كيف تعمل المنصة</a>
+            <a href="#pricing">الأسعار</a>
+            <a href="#contact">تواصل معنا</a>
+          </div>
+          <Link to="/auth" className="nav-cta">
+            ابدأ رحلتك
+          </Link>
+        </div>
+      </nav>
 
-<nav>
-  <div className="wrap">
-    <div className="logo">
-      <div className="logo-mark">م</div>
-      <div className="logo-text">المخ</div>
-    </div>
-    <div className="nav-links">
-      <a href="#about">قصتنا</a>
-      <a href="#streams">الشعب</a>
-      <a href="#features">كيف تعمل المنصة</a>
-      <a href="#pricing">الأسعار</a>
-      <a href="#contact">تواصل معنا</a>
-    </div>
-    <Link to="/auth" className="nav-cta">ابدأ رحلتك</Link>
-  </div>
-</nav>
+      <section className="hero">
+        <div className="wrap hero-grid">
+          <div>
+            <div className="eyebrow">
+              رياضيات وفيزياء · من الرابعة متوسط إلى البكالوريا
+            </div>
+            <h1>
+              طريقك نحو <span className="accent">النجاح</span>
+              <br />
+              يبدأ من هنا
+            </h1>
+            <p className="lead">
+              دروس فيديو، تمارين تفاعلية، وحصص مباشرة مع الأستاذ سيد مختار — في
+              الرياضيات والفيزياء، من شهادة التعليم المتوسط إلى البكالوريا.
+            </p>
+            <div className="hero-actions">
+              <Link to="/auth" className="btn-primary">
+                ابدأ رحلتك مجانًا
+              </Link>
+              <a href="#streams" className="btn-ghost">
+                اكتشف المستويات →
+              </a>
+            </div>
+            <div className="stat-row">
+              <div>
+                <div className="stat-num">٢</div>
+                <div className="stat-label">مادتان: رياضيات وفيزياء</div>
+              </div>
+              <div>
+                <div className="stat-num">٤</div>
+                <div className="stat-label">مستويات دراسية</div>
+              </div>
+              <div>
+                <div className="stat-num">مباشر</div>
+                <div className="stat-label">حصص مع الأستاذ مختار</div>
+              </div>
+            </div>
+          </div>
+          <div className="seal-wrap">
+            <div className="seal">
+              <div className="seal-inner"></div>
+            </div>
+            <div className="seal-inner">
+              <img
+                src="/images/sid-mokhtar.jpeg"
+                alt="الأستاذ سيد مختار"
+                className="teacher-photo"
+              />
+              <div className="seal-caption">
+                <span className="star">★</span>
+                <span>أ. سيد مختار</span>
+              </div>
+            </div>
+            <div className="seal-float">
+              اول 
+              <br />
+              منصة تعليمية في تبسة
+            </div>
+          </div>
+        </div>
+      </section>
 
-<section className="hero">
-  <div className="wrap hero-grid">
-    <div>
-      <div className="eyebrow">رياضيات وفيزياء · من الرابعة متوسط إلى البكالوريا</div>
-      <h1>طريقك نحو <span className="accent">النجاح</span><br/>يبدأ من هنا</h1>
-      <p className="lead">دروس فيديو، تمارين تفاعلية، وحصص مباشرة مع الأستاذ سيد مختار — في الرياضيات والفيزياء، من شهادة التعليم المتوسط إلى البكالوريا.</p>
-      <div className="hero-actions">
-        <Link to="/auth" className="btn-primary">ابدأ رحلتك مجانًا</Link>
-        <a href="#streams" className="btn-ghost">اكتشف المستويات →</a>
-      </div>
-      <div className="stat-row">
-        <div>
-          <div className="stat-num">٢</div>
-          <div className="stat-label">مادتان: رياضيات وفيزياء</div>
+      <section className="about" id="about">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="mini-seal">م</div>
+            <h2>قصتنا</h2>
+            <div className="rule"></div>
+          </div>
+          <div className="about-grid">
+            <div className="dedication-card">
+              <div className="label"></div>
+              <p>
+                 
+                <strong style={{ color: "var(--gold-bright)" }}>
+                  صيد مختار
+                </strong>
+                ،  أستاذ آمن بطلابه قبل أن
+                يؤمنوا بأنفسهم، وحوّل الرياضيات والفيزياء من مادتين صعبتين إلى
+                شغف حقيقي.
+              </p>
+              <p>
+                كل درس هنا يحمل جزءًا من أسلوبه: الصبر، الدقة، والإيمان بأن كل
+                طالب قادر على النجاح.
+              </p>
+            </div>
+            <div className="about-text">
+              <h2>منصة بُنيت حول أسلوب أستاذ واحد</h2>
+              <p>
+                نعرف جيدًا ما يعيشه طالب الرياضيات والفيزياء في الجزائر، من
+                الرابعة متوسط إلى البكالوريا: برنامج كثيف، وحاجة حقيقية لمن يشرح
+                بأسلوب واضح ومباشر.
+              </p>
+              <p>
+                <strong>المخ</strong> منصة مخصصة بالكامل لدروس الأستاذ سيد مختار
+                — تجمع بين الدروس المسجلة، التمارين التفاعلية، والحصص المباشرة،
+                لكل مستوى من الرابعة متوسط إلى البكالوريا.
+              </p>
+              <p>
+                هدفنا بسيط: أن يصل كل طالب إلى يوم الامتحان وهو واثق من نفسه،
+                بفضل نفس الأسلوب الذي صنع الفرق معي.
+              </p>
+            </div>
+          </div>
         </div>
-        <div>
-          <div className="stat-num">٤</div>
-          <div className="stat-label">مستويات دراسية</div>
-        </div>
-        <div>
-          <div className="stat-num">مباشر</div>
-          <div className="stat-label">حصص مع الأستاذ مختار</div>
-        </div>
-      </div>
-    </div>
-    <div className="seal-wrap">
-      <div className="seal"><div className="seal-inner"></div></div>
-      <div className="seal-inner">
-        <div className="star">★</div>
-        <div className="word">المخ</div>
-        <div className="sub">أ. سيد مختار</div>
-      </div>
-      <div className="seal-float">إهداء<br/>خاص</div>
-    </div>
-  </div>
-</section>
+      </section>
 
-<section className="about" id="about">
-  <div className="wrap">
-    <div className="section-head">
-      <div className="mini-seal">م</div>
-      <h2>قصتنا</h2>
-      <div className="rule"></div>
-    </div>
-    <div className="about-grid">
-      <div className="dedication-card">
-        <div className="label">إهداء</div>
-        <p>هذه المنصة وُلدت تكريمًا للأستاذ <strong style={{color:'var(--gold-bright)'}}>سيد مختار</strong>، الذي ترك أثرًا لا يُنسى في مسيرتي — أستاذ آمن بطلابه قبل أن يؤمنوا بأنفسهم، وحوّل الرياضيات والفيزياء من مادتين صعبتين إلى شغف حقيقي.</p>
-        <p>كل درس هنا يحمل جزءًا من أسلوبه: الصبر، الدقة، والإيمان بأن كل طالب قادر على النجاح.</p>
-        <div className="signee">بكل تقدير وامتنان</div>
-      </div>
-      <div className="about-text">
-        <h2>منصة بُنيت حول أسلوب أستاذ واحد</h2>
-        <p>نعرف جيدًا ما يعيشه طالب الرياضيات والفيزياء في الجزائر، من الرابعة متوسط إلى البكالوريا: برنامج كثيف، وحاجة حقيقية لمن يشرح بأسلوب واضح ومباشر.</p>
-        <p><strong>المخ</strong> منصة مخصصة بالكامل لدروس الأستاذ سيد مختار — تجمع بين الدروس المسجلة، التمارين التفاعلية، والحصص المباشرة، لكل مستوى من الرابعة متوسط إلى البكالوريا.</p>
-        <p>هدفنا بسيط: أن يصل كل طالب إلى يوم الامتحان وهو واثق من نفسه، بفضل نفس الأسلوب الذي صنع الفرق معي.</p>
-      </div>
-    </div>
-  </div>
-</section>
+      <section className="streams" id="streams">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="mini-seal">٤</div>
+            <h2>المستويات الدراسية</h2>
+            <div className="rule"></div>
+          </div>
+          <div
+            className="stream-grid"
+            style={{ gridTemplateColumns: "repeat(4,1fr)" }}
+          >
+            <div className="stream-card">
+              <span className="stream-code">LEVEL · BEM</span>
+              <h3>الرابعة متوسط</h3>
+              <p>تحضير مكثف لشهادة التعليم المتوسط في الرياضيات والفيزياء.</p>
+            </div>
+            <div className="stream-card">
+              <span className="stream-code">LEVEL · 1AS</span>
+              <h3>السنة أولى ثانوي</h3>
+              <p>بناء الأساس في الرياضيات والفيزياء لكل الشعب.</p>
+            </div>
+            <div className="stream-card">
+              <span className="stream-code">LEVEL · 2AS</span>
+              <h3>السنة ثانية ثانوي</h3>
+              <p>تعميق المفاهيم استعدادًا للسنة النهائية.</p>
+            </div>
+            <div className="stream-card">
+              <span className="stream-code">LEVEL · BAC</span>
+              <h3>البكالوريا</h3>
+              <p>
+                مراجعة شاملة ومواضيع سابقة مع الحلول، في الرياضيات والفيزياء.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<section className="streams" id="streams">
-  <div className="wrap">
-    <div className="section-head">
-      <div className="mini-seal">٤</div>
-      <h2>المستويات الدراسية</h2>
-      <div className="rule"></div>
-    </div>
-    <div className="stream-grid" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
-      <div className="stream-card">
-        <span className="stream-code">LEVEL · BEM</span>
-        <h3>الرابعة متوسط</h3>
-        <p>تحضير مكثف لشهادة التعليم المتوسط في الرياضيات والفيزياء.</p>
-      </div>
-      <div className="stream-card">
-        <span className="stream-code">LEVEL · 1AS</span>
-        <h3>السنة أولى ثانوي</h3>
-        <p>بناء الأساس في الرياضيات والفيزياء لكل الشعب.</p>
-      </div>
-      <div className="stream-card">
-        <span className="stream-code">LEVEL · 2AS</span>
-        <h3>السنة ثانية ثانوي</h3>
-        <p>تعميق المفاهيم استعدادًا للسنة النهائية.</p>
-      </div>
-      <div className="stream-card">
-        <span className="stream-code">LEVEL · BAC</span>
-        <h3>البكالوريا</h3>
-        <p>مراجعة شاملة ومواضيع سابقة مع الحلول، في الرياضيات والفيزياء.</p>
-      </div>
-    </div>
-  </div>
-</section>
+      <section className="features" id="features">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="mini-seal">؟</div>
+            <h2>كيف تعمل المنصة</h2>
+            <div className="rule"></div>
+          </div>
+          <div className="feature-grid">
+            <div className="feature-card">
+              <div className="feature-icon">▶</div>
+              <h3>دروس فيديو</h3>
+              <p>
+                شرح مفصل لكل درس في المنهاج، يمكنك مشاهدته بالسرعة التي تناسبك.
+              </p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">✎</div>
+              <h3>تمارين تفاعلية</h3>
+              <p>اختبر فهمك بعد كل درس مع تصحيح فوري ونقاط ضعف محددة.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">◐</div>
+              <h3>حصص مباشرة</h3>
+              <p>تواصل مباشر مع الأستاذ لطرح الأسئلة ومراجعة النقاط الصعبة.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">▤</div>
+              <h3>مواضيع سابقة</h3>
+              <p>مكتبة كاملة لمواضيع البكالوريا السابقة مع الحلول النموذجية.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<section className="features" id="features">
-  <div className="wrap">
-    <div className="section-head">
-      <div className="mini-seal">؟</div>
-      <h2>كيف تعمل المنصة</h2>
-      <div className="rule"></div>
-    </div>
-    <div className="feature-grid">
-      <div className="feature-card">
-        <div className="feature-icon">▶</div>
-        <h3>دروس فيديو</h3>
-        <p>شرح مفصل لكل درس في المنهاج، يمكنك مشاهدته بالسرعة التي تناسبك.</p>
-      </div>
-      <div className="feature-card">
-        <div className="feature-icon">✎</div>
-        <h3>تمارين تفاعلية</h3>
-        <p>اختبر فهمك بعد كل درس مع تصحيح فوري ونقاط ضعف محددة.</p>
-      </div>
-      <div className="feature-card">
-        <div className="feature-icon">◐</div>
-        <h3>حصص مباشرة</h3>
-        <p>تواصل مباشر مع الأستاذ لطرح الأسئلة ومراجعة النقاط الصعبة.</p>
-      </div>
-      <div className="feature-card">
-        <div className="feature-icon">▤</div>
-        <h3>مواضيع سابقة</h3>
-        <p>مكتبة كاملة لمواضيع البكالوريا السابقة مع الحلول النموذجية.</p>
-      </div>
-    </div>
-  </div>
-</section>
+      <section className="steps" id="how">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="mini-seal">١</div>
+            <h2>كيف تنضم إلينا</h2>
+            <div className="rule"></div>
+          </div>
+          <div className="steps-list">
+            <div className="step-row">
+              <div className="step-num">١</div>
+              <div className="step-text">
+                <h3>أنشئ حسابك</h3>
+                <p>
+                  سجّل باسمك الكامل ورقم هاتفك وبريدك الإلكتروني، واختر مستواك
+                  الدراسي (من الرابعة متوسط إلى البكالوريا).
+                </p>
+              </div>
+            </div>
+            <div className="step-row">
+              <div className="step-num">٢</div>
+              <div className="step-text">
+                <h3>فعّل وصولك</h3>
+                <p>
+                  تواصل معنا لتفعيل اشتراكك (فصل دراسي أو سنة كاملة)، أو لشراء
+                  وحدة معينة إذا كنت في البكالوريا.
+                </p>
+              </div>
+            </div>
+            <div className="step-row">
+              <div className="step-num">٣</div>
+              <div className="step-text">
+                <h3>شاهد وتعلم</h3>
+                <p>
+                  ادخل إلى لوحة التحكم وابدأ بمشاهدة الدروس المتاحة لك في
+                  الرياضيات والفيزياء.
+                </p>
+              </div>
+            </div>
+            <div className="step-row">
+              <div className="step-num">٤</div>
+              <div className="step-text">
+                <h3>اختبر نفسك</h3>
+                <p>
+                  بعد كل درس، أجب عن أسئلة الاختبار لتتأكد من أنك استوعبت الفكرة
+                  قبل الانتقال للدرس التالي.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<section className="steps" id="how">
-  <div className="wrap">
-    <div className="section-head">
-      <div className="mini-seal">١</div>
-      <h2>كيف تنضم إلينا</h2>
-      <div className="rule"></div>
-    </div>
-    <div className="steps-list">
-      <div className="step-row">
-        <div className="step-num">١</div>
-        <div className="step-text">
-          <h3>أنشئ حسابك</h3>
-          <p>سجّل باسمك الكامل ورقم هاتفك وبريدك الإلكتروني، واختر مستواك الدراسي (من الرابعة متوسط إلى البكالوريا).</p>
-        </div>
-      </div>
-      <div className="step-row">
-        <div className="step-num">٢</div>
-        <div className="step-text">
-          <h3>فعّل وصولك</h3>
-          <p>تواصل معنا لتفعيل اشتراكك (فصل دراسي أو سنة كاملة)، أو لشراء وحدة معينة إذا كنت في البكالوريا.</p>
-        </div>
-      </div>
-      <div className="step-row">
-        <div className="step-num">٣</div>
-        <div className="step-text">
-          <h3>شاهد وتعلم</h3>
-          <p>ادخل إلى لوحة التحكم وابدأ بمشاهدة الدروس المتاحة لك في الرياضيات والفيزياء.</p>
-        </div>
-      </div>
-      <div className="step-row">
-        <div className="step-num">٤</div>
-        <div className="step-text">
-          <h3>اختبر نفسك</h3>
-          <p>بعد كل درس، أجب عن أسئلة الاختبار لتتأكد من أنك استوعبت الفكرة قبل الانتقال للدرس التالي.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+      <section className="pricing" id="pricing">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="mini-seal">$</div>
+            <h2>الأسعار</h2>
+            <div className="rule"></div>
+          </div>
+          <div className="pricing-grid">
+            <div className="price-card">
+              <span className="tag">BEM</span>
+              <h3>الرابعة متوسط</h3>
+              <p className="p-desc">
+                اشترِ كل مادة على حدة — السعر للسنة الدراسية كاملة في المادة
+                الواحدة.
+              </p>
+              <div className="price-plan">
+                <span className="p-label">الرياضيات — السنة كاملة</span>
+                <span className="p-amount">
+                  10,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-plan">
+                <span className="p-label">الفيزياء — السنة كاملة</span>
+                <span className="p-amount">
+                  7,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-note">
+                اختر الرياضيات أو الفيزياء أو كلتيهما معًا — كل مادة تُفعَّل
+                برمز وصول خاص بها.
+              </div>
+            </div>
 
-<section className="pricing" id="pricing">
-  <div className="wrap">
-    <div className="section-head">
-      <div className="mini-seal">$</div>
-      <h2>الأسعار</h2>
-      <div className="rule"></div>
-    </div>
-    <div className="pricing-grid">
-      <div className="price-card">
-        <span className="tag">BEM</span>
-        <h3>الرابعة متوسط</h3>
-        <p className="p-desc">اشترِ كل مادة على حدة — السعر للسنة الدراسية كاملة في المادة الواحدة.</p>
-        <div className="price-plan">
-          <span className="p-label">الرياضيات — السنة كاملة</span>
-          <span className="p-amount">10,000<span className="cur">د.ج</span></span>
-        </div>
-        <div className="price-plan">
-          <span className="p-label">الفيزياء — السنة كاملة</span>
-          <span className="p-amount">7,000<span className="cur">د.ج</span></span>
-        </div>
-        <div className="price-note">اختر الرياضيات أو الفيزياء أو كلتيهما معًا — كل مادة تُفعَّل برمز وصول خاص بها.</div>
-      </div>
+            <div className="price-card ">
+              <span className="tag">1AS · 2AS</span>
+              <h3>الأولى ثانوي · الثانية ثانوي</h3>
+              <p className="p-desc">
+                اشتراك يفتح جميع دروس المستوى في الرياضيات والفيزياء.
+              </p>
+              <div className="price-plan">
+                <span className="p-label">اشتراك فصل دراسي واحد</span>
+                <span className="p-amount">
+                  5,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-plan">
+                <span className="p-label">اشتراك السنة كاملة (3 فصول)</span>
+                <span className="p-amount">
+                  10,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-note">
+                الدفع عبر التحويل البنكي أو بريدي موب — التفعيل يدوي بعد التأكد
+                من الدفع.
+              </div>
+            </div>
 
-      <div className="price-card highlight">
-        <div className="ribbon">الأكثر توفيرًا</div>
-        <span className="tag">1AS · 2AS</span>
-        <h3>الأولى ثانوي · الثانية ثانوي</h3>
-        <p className="p-desc">اشتراك يفتح جميع دروس المستوى في الرياضيات والفيزياء.</p>
-        <div className="price-plan">
-          <span className="p-label">اشتراك فصل دراسي واحد</span>
-          <span className="p-amount">5,000<span className="cur">د.ج</span></span>
-        </div>
-        <div className="price-plan">
-          <span className="p-label">اشتراك السنة كاملة (3 فصول)</span>
-          <span className="p-amount">10,000<span className="cur">د.ج</span></span>
-        </div>
-        <div className="price-note">الدفع عبر التحويل البنكي أو بريدي موب — التفعيل يدوي بعد التأكد من الدفع.</div>
-      </div>
-
-      <div className="price-card">
-        <span className="tag">BAC</span>
-        <h3>البكالوريا</h3>
-        <p className="p-desc">اشترِ كل وحدة على حدة حسب حاجتك، أو كل الوحدات مرة واحدة.</p>
-        <div className="price-plan">
-          <span className="p-label">سعر الوحدة الواحدة</span>
-          <span className="p-amount">3,000<span className="cur">د.ج</span></span>
-        </div>
-        <div className="price-plan">
-          <span className="p-label">سعر كل الوحدات</span>
-          <span className="p-amount">20,000<span className="cur">د.ج</span></span>
-        </div>
-        <div className="price-note">تُفتح كل وحدة فور تأكيد الدفع، وتبقى متاحة لك بلا مدة انتهاء.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section className="contact" id="contact">
-  <div className="wrap">
-    <div className="section-head">
-      <div className="mini-seal">@</div>
-      <h2>تواصل معنا</h2>
-      <div className="rule"></div>
-    </div>
-    <div className="contact-grid">
-      <div className="contact-card">
-        <div className="c-icon">☎</div>
-        <div>
-          <div className="c-label">هاتف / واتساب</div>
-          <div className="c-value">0XX XX XX XX XX</div>
-        </div>
-      </div>
-      <div className="contact-card">
-        <div className="c-icon">✉</div>
-        <div>
-          <div className="c-label">البريد الإلكتروني</div>
-          <div className="c-value">contact@lmokh-platform.dz</div>
-        </div>
-      </div>
-      <div className="contact-card">
-        <div className="c-icon">📍</div>
-        <div>
-          <div className="c-label">الموقع</div>
-          <div className="c-value">الجزائر</div>
-        </div>
-      </div>
-      <div className="contact-card">
-        <div className="c-icon">💬</div>
-        <div>
-          <div className="c-label">صفحة فيسبوك</div>
-          <div className="c-value">facebook.com/lmokh.platform</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section className="stats-band">
-  <div className="wrap">
-    <div className="sb-item"><div className="num">٢٠٠٧</div><div className="lbl">وُلدت الفكرة تكريمًا لهذا الإرث</div></div>
-    <div className="sb-item"><div className="num">١٠٠٪</div><div className="lbl">توافق مع المنهاج الرسمي</div></div>
-    <div className="sb-item"><div className="num">٢٤/٧</div><div className="lbl">وصول للدروس في أي وقت</div></div>
-  </div>
-</section>
-
-<section className="final-cta" id="final">
-  <div className="wrap">
-    <h2>يوم النتائج قادم — لنستعد له معًا</h2>
-    <p>انضم الآن وابدأ أول درس مجانًا، بلا التزام.</p>
-    <Link to="/auth" className="btn-primary">أنشئ حسابك الآن</Link>
-  </div>
-</section>
-
-<footer>
-  <div className="wrap">
-    <div className="f-logo">المخ</div>
-    <div className="f-links">
-      <a href="#about">قصتنا</a>
-      <a href="#streams">الشعب</a>
-      <a href="#features">المنصة</a>
-    </div>
-  </div>
-  <div className="wrap f-bottom">إهداءً لكل أستاذ آمن بطلابه — © المخ 2026</div>
-</footer>
+            
+            <div className="price-card">
+              <span className="tag">BAC Gestion  </span>
+              <h3> البكالوريا تسيير و اقتصاد </h3>
+              <p className="p-desc">
+                اشترِ كل وحدة على حدة حسب حاجتك، أو كل الوحدات مرة واحدة.
+              </p>
+              <div className="price-plan">
+                <span className="p-label">سعر الوحدة الواحدة</span>
+                <span className="p-amount">
+                  3,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-plan">
+                <span className="p-label">سعر كل الوحدات</span>
+                <span className="p-amount">
+                  15,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-note">
+                تُفتح كل وحدة فور تأكيد الدفع، وتبقى متاحة لك بلا مدة انتهاء.
+              </div>
+            </div>
+            <div className="price-card">
+              <span className="tag">BAC SC MT M </span>
+              <h3>البكالوريا</h3>
+              <p className="p-desc">
+                اشترِ كل وحدة على حدة حسب حاجتك، أو كل الوحدات مرة واحدة.
+              </p>
+              <div className="price-plan">
+                <span className="p-label">سعر الوحدة الواحدة</span>
+                <span className="p-amount">
+                  3,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-plan">
+                <span className="p-label">سعر كل الوحدات</span>
+                <span className="p-amount">
+                  15,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-note">
+                تُفتح كل وحدة فور تأكيد الدفع، وتبقى متاحة لك بلا مدة انتهاء.
+              </div>
+            </div>
+            <div className="price-card highlight">
+              <div className="ribbon">الأكثر توفيرًا</div>
+              <span className="tag">البوكس الالماسي    </span>
+              <h3>البكالوريا فيزيا و رياضيات </h3>
+              <p className="p-desc">
+                اشتراك يفتح جميع دروس المستوى في الرياضيات والفيزياء.
+              </p>
+              <div className="price-plan">
+                
+              </div>
+              <div className="price-plan">
+                <span className="p-label"> اشتراك السنة كاملة و مادتين </span>
+                <span className="p-amount">
+                  20,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-note">
+                الدفع عبر التحويل البنكي أو بريدي موب — التفعيل يدوي بعد التأكد
+                من الدفع.
+              </div>
+            </div>
+             <div className="price-card">
+                            <div className="ribbon">الأكثر توفيرًا</div>
+                            <span className="tag">البوكس الالماسي    </span>
 
 
+              <span className="tag">BEM</span>
+              <h3>الرابعة متوسط</h3>
+              <p className="p-desc">
+                السعر للسنة الدراسية كاملة في المادتين
+                
+              </p>
+              <div className="price-plan">
+                <span className="p-label">الرياضيات و الفيزياء — السنة كاملة</span>
+                <span className="p-amount">
+                  10,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-plan">
+                <span className="p-label">الفيزياء — السنة كاملة</span>
+                <span className="p-amount">
+                  7,000<span className="cur">د.ج</span>
+                </span>
+              </div>
+              <div className="price-note">
+                اختر الرياضيات أو الفيزياء أو كلتيهما معًا — كل مادة تُفعَّل
+                برمز وصول خاص بها.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section className="contact" id="contact">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="mini-seal">@</div>
+            <h2>تواصل معنا</h2>
+            <div className="rule"></div>
+          </div>
+          <div className="contact-grid">
+            <div className="contact-card">
+              <div className="c-icon">☎</div>
+              <div>
+                <div className="c-label">هاتف / واتساب</div>
+                <div className="c-value">0557740360</div>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="c-icon">✉</div>
+              <div>
+                <div className="c-label">البريد الإلكتروني</div>
+                <div className="c-value">contact@lmokh-platform.dz</div>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="c-icon">📍</div>
+              <div>
+                <div className="c-label">الموقع</div>
+                <div className="c-value">الجزائر</div>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="c-icon">💬</div>
+              <div>
+                <div className="c-label">صفحة فيسبوك</div>
+                <div className="c-value">facebook.com/lmokh.platform</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="stats-band">
+        <div className="wrap">
+          <div className="sb-item">
+            <div className="num">٢٠٠٧</div>
+            <div className="lbl">وُلدت الفكرة تكريمًا لهذا الإرث</div>
+          </div>
+          <div className="sb-item">
+            <div className="num">١٠٠٪</div>
+            <div className="lbl">توافق مع المنهاج الرسمي</div>
+          </div>
+          <div className="sb-item">
+            <div className="num">٢٤/٧</div>
+            <div className="lbl">وصول للدروس في أي وقت</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="final-cta" id="final">
+        <div className="wrap">
+          <h2>يوم النتائج قادم — لنستعد له معًا</h2>
+          <p>انضم الآن وابدأ أول درس مجانًا، بلا التزام.</p>
+          <Link to="/auth" className="btn-primary">
+            أنشئ حسابك الآن
+          </Link>
+        </div>
+      </section>
+
+      <footer>
+        <div className="wrap">
+          <div className="f-logo">المخ</div>
+          <div className="f-links">
+            <a href="#about">قصتنا</a>
+            <a href="#streams">الشعب</a>
+            <a href="#features">المنصة</a>
+          </div>
+        </div>
+        <div className="wrap f-bottom">
+          إهداءً لكل أستاذ آمن بطلابه — © المخ 2026
+        </div>
+      </footer>
     </div>
   );
 }

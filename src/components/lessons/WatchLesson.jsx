@@ -100,7 +100,7 @@ export default function WatchLesson() {
       : triLabel || 'هذه المجموعة';
   const groupKey = lesson ? groupKeyForLesson(lesson) : '';
   const unlocked = (lesson ? isLessonUnlocked(lesson, { unlockedGroups }) : false) || justUnlocked;
-  const backTo = lesson?.level ? `/level/${lesson.level}?module=${lesson.module || 'math'}` : '/';
+  const backTo = '/app/lessons';
   // New-style lessons are hosted on Bunny Stream (videoId only); older ones
   // have a direct Firebase Storage URL.
   const embedUrl = lesson?.bunnyVideoId ? bunnyEmbedUrl(lesson.bunnyVideoId) : '';

@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchLessonsByLevel } from '../../firebase/lessonsService';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import { fetchLessonsByLevel, fetchMyAccessRequests } from '../../firebase/lessonsService';
 import { groupKey } from '../../firebase/access';
+import useAuth from '../../hooks/useAuth';
 import {
   LEVEL_FULL_LABELS,
   TRIMESTERS,
@@ -43,6 +46,40 @@ export default function LessonsContent({ level, embedded = false }) {
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
   const [modal, setModal] = useState(null); // { type: 'request' | 'code', group }
+
+  // مفاتيح الفتح المحفوظة في Firestore (users/{uid}.unlockedGroups) — تعمل على كل الأجهزة،
+  // بينما localStorage يبقى نسخة محلية سريعة (انظر isGroupUnlocked).
+  const { user } = useAuth();
+  const [unlockedGroups, setUnlockedGroups] = useState([]);
+  // طلبات الوصول قيد المراجعة لهذا المستخدم: groupKey → طلب
+  const [pendingRequests, setPendingRequests] = useState({});
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    let cancelled = false;
+    getDoc(doc(db, 'users', user.uid))
+      .then((snap) => {
+        if (!cancelled && snap.exists() && Array.isArray(snap.data().unlockedGroups)) {
+          setUnlockedGroups(snap.data().unlockedGroups);
+        }
+      })
+      .catch(() => {
+        // دون اتصال / صلاحيات — نعتمد على localStorage فقط
+      });
+    fetchMyAccessRequests(user.uid)
+      .then((items) => {
+        if (cancelled) return;
+        const map = {};
+        items.forEach((r) => {
+          if (r.status === 'pending' && r.groupKey) map[r.groupKey] = r;
+        });
+        setPendingRequests(map);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!valid) return;
@@ -194,6 +231,8 @@ export default function LessonsContent({ level, embedded = false }) {
               <GroupSection
                 key={group.key}
                 group={group}
+                unlockedGroups={unlockedGroups}
+                pendingRequest={pendingRequests[group.key] || pendingRequests[group.moduleKey] || null}
                 onRequest={openRequest}
                 onCode={openCode}
               />
@@ -203,9 +242,21 @@ export default function LessonsContent({ level, embedded = false }) {
       </main>
 
       {modal?.type === 'request' && (
-        <RequestModal group={modal.group} onClose={() => setModal(null)} />
+        <RequestModal
+          group={modal.group}
+          existingRequest={pendingRequests[modal.group.key] || null}
+          onSubmitted={(key) => setPendingRequests((prev) => ({ ...prev, [key]: { status: 'pending', groupKey: key } }))}
+          onClose={() => setModal(null)}
+        />
       )}
-      {modal?.type === 'code' && <CodeModal group={modal.group} onClose={() => setModal(null)} />}
+      {modal?.type === 'code' && (
+        <CodeModal
+          group={modal.group}
+          user={user}
+          onUnlocked={(key) => setUnlockedGroups((prev) => (prev.includes(key) ? prev : [...prev, key]))}
+          onClose={() => setModal(null)}
+        />
+      )}
     </div>
   );
 }
