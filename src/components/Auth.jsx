@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
@@ -168,6 +169,18 @@ export default function Auth() {
       return false;
     }
 
+    // سياسة كلمة المرور عند إنشاء الحساب: 8 أحرف على الأقل، بحرف ورقم معًا
+    if (mode === 'signup') {
+      if (password.length < 8) {
+        setError('كلمة المرور يجب أن تكون 8 أحرف أو أكثر.');
+        return false;
+      }
+      if (!/[A-Za-z\u0600-\u06FF]/.test(password) || !/\d/.test(password)) {
+        setError('كلمة المرور يجب أن تحتوي على حرف ورقم معًا.');
+        return false;
+      }
+    }
+
     if (
       mode === 'signup' &&
       confirm !== password
@@ -224,8 +237,11 @@ export default function Auth() {
           // handle the redirect
         });
 
+        // رسالة تأكيد البريد — الوصول للدروس يبقى مغلقًا حتى التأكيد (VerifyEmailGate)
+        sendEmailVerification(cred.user).catch(() => {});
+
         setInfo(
-          'تم إنشاء حسابك بنجاح! اختر مستواك الدراسي للمتابعة. ✨'
+          'تم إنشاء حسابك! أرسلنا رسالة تأكيد إلى بريدك — افتحها لتفعيل الحساب. ✨'
         );
       } else {
         // Login

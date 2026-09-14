@@ -60,7 +60,8 @@ export default function RequestModal({ group, existingRequest = null, onSubmitte
         phone,
         level: group.level,
         module: group.module,
-        [group.field]: group.fieldValue,
+        // طلب فصل/وحدة محددة، أو المادة كاملة (بلا field)
+        ...(group.field ? { [group.field]: group.fieldValue } : { scope: 'module' }),
         groupKey: group.key,
       });
       onSubmitted?.(group.key);

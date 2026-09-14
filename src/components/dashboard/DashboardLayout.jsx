@@ -6,6 +6,7 @@ import { auth, db } from '../../firebase/config';
 import { SERVICES, getLevel } from './services';
 import { getSavedLevel, saveSavedLevel } from '../../utils/localLevel';
 import useAuth from '../../hooks/useAuth';
+import VerifyEmailGate, { needsEmailVerification } from '../VerifyEmailGate';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -91,6 +92,11 @@ export default function DashboardLayout() {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // حساب بكلمة مرور لم يؤكَّد بريده → لا وصول إلى المنصة قبل التأكيد
+  if (needsEmailVerification(user)) {
+    return <VerifyEmailGate user={user} />;
   }
 
   return (

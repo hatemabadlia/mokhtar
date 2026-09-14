@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -18,6 +19,23 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Firebase App Check (reCAPTCHA v3): يضمن أن طلبات Firestore/Auth تأتي من موقعنا فقط
+// وليس من سكربتات خارجية تستعمل مفتاح API العام. يُفعَّل تلقائيًا عند ضبط
+// VITE_RECAPTCHA_SITE_KEY في .env (بعد تسجيل الموقع في Firebase Console → App Check).
+const appCheckSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+if (typeof window !== "undefined" && appCheckSiteKey) {
+  try {
+    if (import.meta.env.DEV) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // توكن تصحيح محلي
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(appCheckSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (e) {
+    // App Check غير متاح — تستمر التطبيقات بالعمل (الإلزام يُضبط من Console)
+  }
+}
+
 
 // Firebase Authentication
 const auth = getAuth(app);

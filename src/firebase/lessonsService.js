@@ -32,7 +32,7 @@ export async function fetchLessonById(id) {
  * - غير البكالوريا: { name, email, level, module, trimester, status, createdAt }
  * - البكالوريا:     { name, email, level, module, unit, status, createdAt }
  */
-export async function submitAccessRequest({ uid, name, email, phone, level, module, trimester, unit, groupKey }) {
+export async function submitAccessRequest({ uid, name, email, phone, level, module, trimester, unit, groupKey, scope }) {
   const payload = {
     name: name.trim(),
     email: email.trim(),
@@ -47,6 +47,8 @@ export async function submitAccessRequest({ uid, name, email, phone, level, modu
   if (phone) payload.phone = String(phone).replace(/\s+/g, '');
   // مفتاح المجموعة المطلوبة (level_module_group) لمطابقة الحالة في واجهة الطالب
   if (groupKey) payload.groupKey = groupKey;
+  // scope: 'module' = طلب المادة كاملة (كل الفصول/الوحدات) — بلا trimester/unit
+  if (scope === 'module') payload.scope = 'module';
   if (level === 'bac') {
     if (unit) payload.unit = unit;
   } else if (trimester) {

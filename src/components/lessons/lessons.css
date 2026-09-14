@@ -205,6 +205,19 @@
   border-radius: 12px; padding: 8px 14px; margin: 0;
 }
 
+/* ===== بطاقة «المادة كاملة» ===== */
+.naj-pass {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(227,162,60,0.14), rgba(14,59,54,0.06));
+  border: 1.5px dashed rgba(227,162,60,0.6); border-radius: 18px; padding: 18px 22px; margin-bottom: 22px;
+}
+.naj-pass.open { border-style: solid; border-color: rgba(47,110,79,0.45); background: rgba(47,110,79,0.07); }
+.naj-pass-ico { font-size: 34px; flex-shrink: 0; }
+.naj-pass-body { flex: 1; min-width: 220px; }
+.naj-pass-body h3 { font-family: 'Aref Ruqaa', serif; font-size: 19px; color: var(--ink-teal); margin: 0 0 4px; }
+.naj-pass-body p { font-size: 13px; color: var(--muted); line-height: 1.7; margin: 0; }
+.naj-pass-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
 /* ===== الأزرار ===== */
 .naj-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -390,6 +403,8 @@
 .naj-done .naj-done-sub { font-weight: 400; font-size: 13.5px; color: var(--muted); max-width: 320px; margin-bottom: 10px; }
 
 /* ===== صفحة المشاهدة ===== */
+.naj-video-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #0b1f1c; color: var(--parchment); padding: 20px; text-align: center; }
+.naj-video-state p { margin: 0; font-size: 13.5px; }
 .naj-watch { padding: 34px 0 70px; max-width: 880px; }
 .naj-video-wrap {
   position: relative;

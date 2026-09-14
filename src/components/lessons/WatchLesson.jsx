@@ -17,7 +17,7 @@ import {
   lessonCreatedAtMs,
 } from '../../data/platform';
 import CodeForm from './CodeForm';
-import { bunnyEmbedUrl, bunnyThumbnailUrl } from '../../lib/bunny';
+import { bunnyEmbedUrl, bunnyThumbnailUrl, fetchEmbedToken } from '../../lib/bunny';
 import useAuth from '../../hooks/useAuth';
 import { markLessonWatched } from '../../utils/watchHistory';
 import './lessons.css';
@@ -103,7 +103,27 @@ export default function WatchLesson() {
   const backTo = '/app/lessons';
   // New-style lessons are hosted on Bunny Stream (videoId only); older ones
   // have a direct Firebase Storage URL.
-  const embedUrl = lesson?.bunnyVideoId ? bunnyEmbedUrl(lesson.bunnyVideoId) : '';
+  // المشغّل يحتاج توكنًا موقّعًا من الـ Worker (Token Authentication في Bunny):
+  // يُمنح فقط إذا كان القسم مفتوحًا فعلًا في حساب الطالب — لا يكفي فتح الواجهة.
+  const [embed, setEmbed] = useState({ url: '', status: 'idle' }); // idle | loading | ready | locked | error
+  useEffect(() => {
+    if (!lesson?.bunnyVideoId || !unlocked || !user) return;
+    let cancelled = false;
+    setEmbed({ url: '', status: 'loading' });
+    fetchEmbedToken(lesson.id)
+      .then((d) => {
+        if (cancelled) return;
+        setEmbed({ url: d.embedUrl || bunnyEmbedUrl(d.videoId, d.token, d.expires), status: 'ready' });
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setEmbed({ url: '', status: e?.code === 'locked' ? 'locked' : 'error' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lesson?.id, lesson?.bunnyVideoId, unlocked, user, justUnlocked]);
+  const embedUrl = embed.status === 'ready' ? embed.url : '';
   const posterUrl = lesson?.bunnyVideoId
     ? bunnyThumbnailUrl(lesson.bunnyVideoId)
     : (lesson?.thumbnailURL || undefined);
@@ -181,6 +201,21 @@ export default function WatchLesson() {
         {!loading && !error && lesson && unlocked && (
           <>
             <div className="naj-video-wrap">
+              {lesson.bunnyVideoId && embed.status === 'loading' && (
+                <div className="naj-video-state"><span className="naj-spinner big" /><p>جارٍ تجهيز المشغّل…</p></div>
+              )}
+              {lesson.bunnyVideoId && embed.status === 'locked' && (
+                <div className="naj-video-state">
+                  <p className="naj-msg naj-msg-error" style={{ maxWidth: 420 }}>
+                    هذا القسم غير مفتوح في حسابك بعد. إن أدخلت رمزًا على جهاز آخر فأعد إدخاله هنا، أو تواصل معنا.
+                  </p>
+                </div>
+              )}
+              {lesson.bunnyVideoId && embed.status === 'error' && (
+                <div className="naj-video-state">
+                  <p className="naj-msg naj-msg-error" style={{ maxWidth: 420 }}>تعذّر تجهيز المشغّل — تحقق من الاتصال ثم أعد تحميل الصفحة.</p>
+                </div>
+              )}
               {embedUrl ? (
                 <iframe
                   className="naj-video"
@@ -191,7 +226,7 @@ export default function WatchLesson() {
                   allowFullScreen
                   referrerPolicy="no-referrer-when-downgrade"
                 />
-              ) : (
+              ) : lesson.bunnyVideoId ? null : (
                 <video
                   className="naj-video"
                   controls
@@ -336,7 +371,7 @@ export default function WatchLesson() {
                     isBac: lesson.level === 'bac',
                   }}
                   onSuccess={(res) => {
-                    persistUnlock(user, res.key);
+                    persistUnlock(user, res.key, res.code);
                     setJustUnlocked(true);
                   }}
                 />

@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
+import VerifyEmailGate, { needsEmailVerification } from './VerifyEmailGate';
 
 /**
  * حارس المصادقة — يمنع الوصول إلى المحتوى قبل تسجيل الدخول.
@@ -49,6 +50,10 @@ export default function RequireAuth({ children }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (needsEmailVerification(user)) {
+    return <VerifyEmailGate user={user} />;
   }
 
   return children;

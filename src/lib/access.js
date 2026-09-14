@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 // Prefix used for the offline grant in localStorage.
@@ -89,16 +89,34 @@ export function isLessonUnlocked(lesson, { unlockedGroups = [] } = {}) {
   return false;
 }
 
-/** حفظ الفتح: localStorage دائمًا + Firestore (users/{uid}.unlockedGroups) بأفضل جهد. */
-export async function persistUnlock(user, key) {
+/**
+ * حفظ الفتح: localStorage دائمًا + Firestore (users/{uid}) بأفضل جهد.
+ * قواعد Firestore لا تقبل إضافة مفتاح إلى unlockedGroups إلا مع
+ * lastRedeem: { code, key } — وتتحقق هي بنفسها من أن الرمز صالح ويطابق المفتاح
+ * (فلا يمكن للطالب فتح قسم من المتصفح بلا رمز حقيقي).
+ */
+export async function persistUnlock(user, key, code) {
   unlockGroup(key);
-  if (user?.uid && key) {
-    try {
-      // merge حتى لا يفشل إن لم يكن مستند المستخدم موجودًا بعد
-      await setDoc(doc(db, 'users', user.uid), { unlockedGroups: arrayUnion(key) }, { merge: true });
-    } catch {
-      // القواعد/الشبكة — الفتح المحلي يكفي للاستمرار
-    }
+  if (!user?.uid || !key || !code) return;
+  const userRef = doc(db, 'users', user.uid);
+  const normalized = String(code).trim().replace(/\s+/g, '').toUpperCase();
+  const codeRef = doc(db, 'accessCodes', normalized);
+  try {
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) return; // الملف يُنشأ في الإعداد الأول — لا نفتح قبل ذلك
+    const before = Array.isArray(snap.data().unlockedGroups) ? snap.data().unlockedGroups : [];
+    if (before.includes(key)) return;
+    // دفعة واحدة: فتح القسم + تسجيل استعمال الرمز (القواعد تتحقق من الاثنين معًا)
+    const batch = writeBatch(db);
+    batch.update(userRef, {
+      unlockedGroups: [...before, key],
+      lastRedeem: { code: normalized, key },
+      updatedAt: serverTimestamp(),
+    });
+    batch.update(codeRef, { usedBy: arrayUnion(user.uid), lastUsedAt: serverTimestamp() });
+    await batch.commit();
+  } catch {
+    // القواعد/الشبكة — الفتح المحلي يكفي للاستمرار على هذا الجهاز
   }
 }
 
@@ -136,6 +154,6 @@ export async function redeemAccessCode({ user, code, level, module, groupValue, 
   }
 
   const key = codeGroupValue ? groupKey(level, module, codeGroupValue) : groupKey(level, module);
-  await persistUnlock(user, key);
+  await persistUnlock(user, key, trimmed);
   return key;
 }

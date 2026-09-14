@@ -11,7 +11,11 @@
 // admin panel (src/lib/bunny.js there). Never import or copy it into this
 // student-facing bundle.
 
+import { auth } from '../firebase/config';
+
 const BUNNY_LIBRARY_ID = '740962';
+// الـ Worker الذي يوقّع توكن المشاهدة بعد التحقق من أن القسم مفتوح للطالب
+export const MEDIA_WORKER_URL = 'https://sidmokhtar-r2-exams.abadliahatem.workers.dev';
 
 // CDN hostname (pull zone) for the Stream library, found in
 // Bunny dashboard → Stream → your library → CDN Hostname.
@@ -30,12 +34,41 @@ export function bunnyThumbnailUrl(videoId) {
 }
 
 /**
- * Embed URL for the Bunny Stream iframe player.
- * Format per Bunny docs: https://player.mediadelivery.net/embed/{library_id}/{video_id}
+ * Embed URL for the Bunny Stream iframe player (with Token Authentication).
+ * Format: https://iframe.mediadelivery.net/embed/{library_id}/{video_id}?token=..&expires=..
+ * Without token/expires the player refuses to play once token auth is enabled in Bunny.
  */
-export function bunnyEmbedUrl(videoId) {
+export function bunnyEmbedUrl(videoId, token, expires) {
   if (!videoId) return '';
-  return `https://player.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}`;
+  const base = `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}`;
+  if (!token || !expires) return base;
+  return `${base}?token=${encodeURIComponent(token)}&expires=${expires}&autoplay=false`;
+}
+
+/**
+ * يطلب من الـ Worker توكن مشاهدة موقّعًا لدرس معيّن.
+ * الـ Worker يتحقق (بتوكن Firebase) من أن unlockedGroups تغطي هذا الدرس، وإلا 403.
+ * يُرجع { embedUrl, token, expires } أو يرمي خطأ بكود: 'locked' | 'auth' | 'network'.
+ */
+export async function fetchEmbedToken(lessonId) {
+  const user = auth.currentUser;
+  if (!user) throw Object.assign(new Error('auth'), { code: 'auth' });
+  const idToken = await user.getIdToken();
+  let res;
+  try {
+    res = await fetch(`${MEDIA_WORKER_URL}/bunny/embed-token`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${idToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ lessonId }),
+    });
+  } catch {
+    throw Object.assign(new Error('network'), { code: 'network' });
+  }
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 403) throw Object.assign(new Error('locked'), { code: 'locked' });
+  if (res.status === 401) throw Object.assign(new Error('auth'), { code: 'auth' });
+  if (!res.ok) throw Object.assign(new Error(data.error || 'error'), { code: 'error' });
+  return data;
 }
 
 export const BUNNY_LIBRARY_ID_VALUE = BUNNY_LIBRARY_ID;

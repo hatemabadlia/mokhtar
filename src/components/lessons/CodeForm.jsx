@@ -28,6 +28,8 @@ export default function CodeForm({ groupLabel, scope, onSuccess, onCancel }) {
       onSuccess(res);
     } else if (res.error === 'network') {
       setError('تعذّر التحقق من الرمز — تحقق من اتصالك بالإنترنت.');
+    } else if (res.error === 'exhausted') {
+      setError('هذا الرمز استُعمل بالكامل — كل رمز مخصّص لعدد محدود من الطلاب. تواصل معنا للحصول على رمزك.');
     } else if (res.error === 'scope') {
       setError('هذا الرمز لا يخص هذه المادة/القسم — كل مادة لها رمزها الخاص.');
     } else {

@@ -1,6 +1,46 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+const fmt = (n) => n.toLocaleString("en-US");
+
+/* Price with optional original (pre-discount) price + discount badge */
+function Price({ amount, old }) {
+  const pct = old ? Math.round((1 - amount / old) * 100) : null;
+  return (
+    <span className="p-amount">
+      {old && (
+        <span className="p-was">
+          <s className="p-old">
+            {fmt(old)}
+            <span className="cur">د.ج</span>
+          </s>
+          <span className="p-save">-{pct}%</span>
+        </span>
+      )}
+      <span className="p-new">
+        {fmt(amount)}
+        <span className="cur">د.ج</span>
+      </span>
+    </span>
+  );
+}
+
+/* Savings bar shown under bundle offers */
+function SaveBar({ amount, old }) {
+  const pct = Math.round((1 - amount / old) * 100);
+  return (
+    <div className="save-bar" role="img" aria-label={`توفّر ${fmt(old - amount)} د.ج`}>
+      <div className="save-bar-track">
+        <div className="save-bar-fill" style={{ width: `${pct}%` }}></div>
+      </div>
+      <span className="save-bar-text">
+        توفّر <b>{fmt(old - amount)} د.ج</b> مقارنة بالشراء المنفصل
+      </span>
+    </div>
+  );
+}
+
+
 export default function LmokhLanding() {
   return (
     <div dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
@@ -234,13 +274,32 @@ export default function LmokhLanding() {
   .price-card h3{ font-family:'Aref Ruqaa', serif; font-size:24px; color:var(--ink-teal); margin-bottom:8px; }
   .price-card .p-desc{ font-size:14px; color:#5c584c; margin-bottom:22px; }
   .price-plan{
-    display:flex; justify-content:space-between; align-items:baseline; padding:14px 0;
-    border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; gap:14px; padding:16px 0;
   }
-  .price-plan:first-of-type{ border-top:none; }
-  .price-plan .p-label{ font-size:14.5px; color:var(--text-dark); font-weight:500; }
-  .price-plan .p-amount{ font-family:'Aref Ruqaa', serif; font-size:20px; color:var(--ink-teal); }
-  .price-plan .p-amount .cur{ font-family:'IBM Plex Sans Arabic', sans-serif; font-size:12px; color:#8a8574; margin-inline-start:4px; }
+  .price-plan + .price-plan{ border-top:1px dashed var(--line); }
+  .price-plan .p-label{ font-size:14.5px; color:var(--text-dark); font-weight:500; line-height:1.45; }
+  .p-amount{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
+  .p-was{ display:flex; align-items:center; gap:8px; }
+  .p-old{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; color:#8a8574;
+    text-decoration:line-through; text-decoration-color:var(--crimson); text-decoration-thickness:1.5px;
+  }
+  .p-old .cur{ font-size:10px; }
+  .p-save{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.04em;
+    color:#fff; background:var(--crimson); border-radius:999px; padding:2px 8px; line-height:1.5;
+  }
+  .p-new{ font-family:'Aref Ruqaa', serif; font-size:28px; line-height:1.1; color:var(--ink-teal); }
+  .price-card.highlight .p-new{ font-size:34px; }
+  .p-amount .cur{ font-family:'IBM Plex Sans Arabic', sans-serif; font-size:12px; color:#8a8574; margin-inline-start:4px; }
+  .save-bar{
+    margin-top:18px; padding:12px 14px; border-radius:12px;
+    background:rgba(227,162,60,0.12); border:1px dashed rgba(227,162,60,0.55);
+  }
+  .save-bar-track{ height:6px; border-radius:999px; background:rgba(14,59,54,0.12); overflow:hidden; }
+  .save-bar-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg, var(--gold), var(--gold-bright)); }
+  .save-bar-text{ display:block; margin-top:8px; font-size:12.5px; color:var(--ink-teal); }
+  .save-bar-text b{ font-weight:700; }
   .price-note{ font-size:12.5px; color:#8a8574; margin-top:16px; }
 
   /* ===== STEPS ===== */
@@ -589,16 +648,20 @@ export default function LmokhLanding() {
                 الواحدة.
               </p>
               <div className="price-plan">
+                <span className="p-label">الرياضيات  الفصل </span>
+                <Price amount={4500} />
+              </div>
+              <div className="price-plan">
                 <span className="p-label">الرياضيات — السنة كاملة</span>
-                <span className="p-amount">
-                  10,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={10000} old={13500} />
+              </div>
+               <div className="price-plan">
+                <span className="p-label">الفيزياء  الفصل </span>
+                <Price amount={3500} />
               </div>
               <div className="price-plan">
                 <span className="p-label">الفيزياء — السنة كاملة</span>
-                <span className="p-amount">
-                  7,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={7000} old={10500} />
               </div>
               <div className="price-note">
                 اختر الرياضيات أو الفيزياء أو كلتيهما معًا — كل مادة تُفعَّل
@@ -606,7 +669,7 @@ export default function LmokhLanding() {
               </div>
             </div>
 
-            <div className="price-card ">
+            <div className="price-card">
               <span className="tag">1AS · 2AS</span>
               <h3>الأولى ثانوي · الثانية ثانوي</h3>
               <p className="p-desc">
@@ -614,118 +677,113 @@ export default function LmokhLanding() {
               </p>
               <div className="price-plan">
                 <span className="p-label">اشتراك فصل دراسي واحد</span>
-                <span className="p-amount">
-                  5,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={5000} />
               </div>
               <div className="price-plan">
                 <span className="p-label">اشتراك السنة كاملة (3 فصول)</span>
-                <span className="p-amount">
-                  10,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={10000} old={15000} />
               </div>
+              <SaveBar amount={10000} old={15000} />
               <div className="price-note">
                 الدفع عبر التحويل البنكي أو بريدي موب — التفعيل يدوي بعد التأكد
                 من الدفع.
               </div>
             </div>
 
-            
             <div className="price-card">
-              <span className="tag">BAC Gestion  </span>
-              <h3> البكالوريا تسيير و اقتصاد </h3>
+              <span className="tag">BAC Gestion</span>
+              <h3>البكالوريا تسيير و اقتصاد</h3>
               <p className="p-desc">
                 اشترِ كل وحدة على حدة حسب حاجتك، أو كل الوحدات مرة واحدة.
               </p>
               <div className="price-plan">
                 <span className="p-label">سعر الوحدة الواحدة</span>
-                <span className="p-amount">
-                  3,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={3000} />
               </div>
               <div className="price-plan">
                 <span className="p-label">سعر كل الوحدات</span>
-                <span className="p-amount">
-                  15,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={15000} old={21000} />
               </div>
+                            <SaveBar amount={15000} old={21000} />
+
               <div className="price-note">
                 تُفتح كل وحدة فور تأكيد الدفع، وتبقى متاحة لك بلا مدة انتهاء.
               </div>
             </div>
+
             <div className="price-card">
-              <span className="tag">BAC SC MT M </span>
+              <span className="tag">BAC SC · MT · M</span>
               <h3>البكالوريا</h3>
               <p className="p-desc">
                 اشترِ كل وحدة على حدة حسب حاجتك، أو كل الوحدات مرة واحدة.
               </p>
               <div className="price-plan">
                 <span className="p-label">سعر الوحدة الواحدة</span>
-                <span className="p-amount">
-                  3,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={3000} />
               </div>
               <div className="price-plan">
                 <span className="p-label">سعر كل الوحدات</span>
-                <span className="p-amount">
-                  15,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={15000} old={21000} />
               </div>
+                                          <SaveBar amount={21000} old={15000} />
+
               <div className="price-note">
                 تُفتح كل وحدة فور تأكيد الدفع، وتبقى متاحة لك بلا مدة انتهاء.
               </div>
             </div>
+
             <div className="price-card highlight">
               <div className="ribbon">الأكثر توفيرًا</div>
-              <span className="tag">البوكس الالماسي    </span>
-              <h3>البكالوريا فيزيا و رياضيات </h3>
+              <span className="tag">البوكس الالماسي</span>
+              <h3>البكالوريا فيزياء و رياضيات</h3>
               <p className="p-desc">
                 اشتراك يفتح جميع دروس المستوى في الرياضيات والفيزياء.
               </p>
               <div className="price-plan">
-                
+                <span className="p-label">اشتراك السنة كاملة — مادتين</span>
+                <Price amount={20000} old={30000} />
               </div>
-              <div className="price-plan">
-                <span className="p-label"> اشتراك السنة كاملة و مادتين </span>
-                <span className="p-amount">
-                  20,000<span className="cur">د.ج</span>
-                </span>
-              </div>
+              <SaveBar amount={20000} old={30000} />
               <div className="price-note">
                 الدفع عبر التحويل البنكي أو بريدي موب — التفعيل يدوي بعد التأكد
                 من الدفع.
               </div>
             </div>
-             <div className="price-card">
-                            <div className="ribbon">الأكثر توفيرًا</div>
-                            <span className="tag">البوكس الالماسي    </span>
-
-
-              <span className="tag">BEM</span>
-              <h3>الرابعة متوسط</h3>
+            <div className="price-card highlight">
+              <div className="ribbon">الأكثر توفيرًا</div>
+              <span className="tag">البوكس الالماسي</span>
+              <h3>البكالوريا للشعب الادبية  </h3>
               <p className="p-desc">
-                السعر للسنة الدراسية كاملة في المادتين
-                
+                اشتراك يفتح جميع دروس المستوى  الرياضيات للادبيين .
+              </p>
+              <div className="price-plan">
+                <span className="p-label">اشتراك السنة كاملة — مادتين</span>
+                <Price amount={10000} old={15000} />
+              </div>
+              <SaveBar amount={10000} old={15000} />
+              <div className="price-note">
+                الدفع عبر التحويل البنكي أو بريدي موب — التفعيل يدوي بعد التأكد
+                من الدفع.
+              </div>
+            </div>
+            <div className="price-card highlight">
+              <div className="ribbon">الأكثر توفيرًا</div>
+              <span className="tag">البوكس الالماسي · BEM</span>
+              <h3>الرابعة متوسط — المادتين</h3>
+              <p className="p-desc">
+                السعر للسنة الدراسية كاملة في الرياضيات والفيزياء معًا.
               </p>
               <div className="price-plan">
                 <span className="p-label">الرياضيات و الفيزياء — السنة كاملة</span>
-                <span className="p-amount">
-                  10,000<span className="cur">د.ج</span>
-                </span>
+                <Price amount={14000} old={17000} />
               </div>
-              <div className="price-plan">
-                <span className="p-label">الفيزياء — السنة كاملة</span>
-                <span className="p-amount">
-                  7,000<span className="cur">د.ج</span>
-                </span>
-              </div>
+              <SaveBar amount={14000} old={17000} />
               <div className="price-note">
-                اختر الرياضيات أو الفيزياء أو كلتيهما معًا — كل مادة تُفعَّل
-                برمز وصول خاص بها.
+                تُفعَّل المادتان معًا برمز وصول واحد فور تأكيد الدفع.
               </div>
+
             </div>
           </div>
-
         </div>
       </section>
 

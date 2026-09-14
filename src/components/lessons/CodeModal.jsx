@@ -27,7 +27,7 @@ export default function CodeModal({ group, user, onUnlocked, onClose }) {
         onCancel={onClose}
         onSuccess={async (res) => {
           // localStorage فورًا + Firestore (users/{uid}.unlockedGroups) حتى يبقى الفتح على كل الأجهزة
-          await persistUnlock(user, res.key);
+          await persistUnlock(user, res.key, res.code);
           onUnlocked?.(res.key);
           onClose();
         }}

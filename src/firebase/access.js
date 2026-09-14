@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from './config';
+import { auth, db } from './config';
 import { PREFIX, groupKey, groupKeyForLesson, isGroupUnlocked, unlockGroup } from '../lib/access';
 
 // هذه الطبقة (المتوافقة) تُعيد تصدير منطق الوصول الموحَّد من lib/access
@@ -48,6 +48,13 @@ export async function validateAccessCode(rawCode, scope = {}) {
 
   const expires = toMillis(data.expiresAt);
   if (expires && expires <= Date.now()) return { ok: false, code };
+
+  // حدّ الاستعمال: رمز محدود العدد استُهلك من قِبل طلاب آخرين
+  const usedBy = Array.isArray(data.usedBy) ? data.usedBy : [];
+  const uid = auth.currentUser?.uid;
+  if (data.maxUses != null && usedBy.length >= data.maxUses && !(uid && usedBy.includes(uid))) {
+    return { ok: false, code, error: 'exhausted' };
+  }
 
   // النطاق: كل رمز يجب أن يخص مادة واحدة بالضبط.
   if (!data.module) return { ok: false, code, error: 'scope' };

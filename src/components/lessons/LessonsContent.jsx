@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { fetchLessonsByLevel, fetchMyAccessRequests } from '../../firebase/lessonsService';
-import { groupKey } from '../../firebase/access';
+import { groupKey, isGroupUnlocked as isGroupUnlockedLocal } from '../../firebase/access';
 import useAuth from '../../hooks/useAuth';
 import {
   LEVEL_FULL_LABELS,
@@ -149,6 +149,21 @@ export default function LessonsContent({ level, embedded = false }) {
   const openCode = (group) =>
     setModal({ type: 'code', group: { ...group, level, levelLabel, module, moduleLabel, isBac } });
 
+  // «المادة كاملة»: مفتاح level_module يفتح كل الفصول/الوحدات بمرة واحدة
+  const moduleKeyValue = groupKey(level, module);
+  const moduleGroup = {
+    type: 'module',
+    label: isBac ? 'كل الوحدات' : 'كل الفصول',
+    key: moduleKeyValue,
+    moduleKey: moduleKeyValue,
+    field: null,
+    fieldValue: '',
+    lessons: [],
+    emptyText: '',
+  };
+  const moduleUnlocked = isGroupUnlockedLocal(moduleKeyValue) || unlockedGroups.includes(moduleKeyValue);
+  const modulePending = pendingRequests[moduleKeyValue] || null;
+
   if (!valid) return null;
 
   return (
@@ -222,6 +237,36 @@ export default function LessonsContent({ level, embedded = false }) {
             <p className="naj-empty">
               لا توجد دروس في {moduleLabel} لهذا المستوى بعد — ترقّب قريبًا.
             </p>
+          </div>
+        )}
+
+        {!loading && !error && moduleLessons.length > 0 && (
+          <div className={`naj-pass${moduleUnlocked ? ' open' : ''}`}>
+            <div className="naj-pass-ico">{moduleUnlocked ? '✅' : '🎁'}</div>
+            <div className="naj-pass-body">
+              <h3>
+                {moduleUnlocked
+                  ? `${moduleLabel} كاملة مفتوحة`
+                  : `اشترك في ${moduleLabel} كاملة — ${isBac ? 'كل الوحدات' : 'كل الفصول'} برمز واحد`}
+              </h3>
+              <p>
+                {moduleUnlocked
+                  ? `لديك وصول إلى جميع ${isBac ? 'وحدات' : 'فصول'} ${moduleLabel} لهذا المستوى.`
+                  : modulePending
+                    ? 'طلبك للمادة كاملة قيد المراجعة — بعد تأكيد الدفع تُفتح كل الأقسام في حسابك.'
+                    : `بدل طلب كل ${isBac ? 'وحدة' : 'فصل'} على حدة: رمز واحد يفتح كل دروس ${moduleLabel} (${sections.length} ${isBac ? 'وحدة' : 'فصول'}).`}
+              </p>
+            </div>
+            {!moduleUnlocked && (
+              <div className="naj-pass-actions">
+                <button type="button" className="naj-btn naj-btn-ghost" onClick={() => openCode(moduleGroup)}>
+                  لدي رمز المادة
+                </button>
+                <button type="button" className="naj-btn naj-btn-gold" onClick={() => openRequest(moduleGroup)}>
+                  {modulePending ? '⏳ حالة الطلب' : 'اطلب المادة كاملة'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
