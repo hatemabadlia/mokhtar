@@ -670,7 +670,7 @@ export default function LmokhLanding() {
             </div>
 
             <div className="price-card">
-              <span className="tag">1AS · 2AS</span>
+              <span className="tag">البوكس الذهبي</span>
               <h3>الأولى ثانوي · الثانية ثانوي</h3>
               <p className="p-desc">
                 اشتراك يفتح جميع دروس المستوى في الرياضيات والفيزياء.
