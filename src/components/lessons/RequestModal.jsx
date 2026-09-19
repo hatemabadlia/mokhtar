@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { submitAccessRequest } from '../../firebase/lessonsService';
 import useAuth from '../../hooks/useAuth';
 import Modal from './Modal';
+import { whatsappLink } from '../../lib/whatsapp';
 import './lessons.css';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -9,7 +10,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^(0[5-7]\d{8}|(\+|00)?213[5-7]\d{8})$/;
 
 // واتساب — هنا يتواصل الطالب معنا لتأكيد الدفع واستلام رمز التفعيل
-const WHATSAPP_URL = 'https://wa.me/qr/N7P2QORNYNBQO1';
+const WHATSAPP_URL = whatsappLink();
 
 /**
  * نافذة "اطلب الوصول" — طلب خاص بمجموعة واحدة داخل مادة واحدة:

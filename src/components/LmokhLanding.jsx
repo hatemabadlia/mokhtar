@@ -334,7 +334,8 @@ export default function LmokhLanding() {
     display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
   }
   .contact-card .c-label{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--gold-bright); margin-bottom:4px; }
-  .contact-card .c-value{ font-size:15px; font-weight:600; }
+  .contact-card .c-value{ font-size:15px; font-weight:600; color:inherit; text-decoration:none; display:block; }
+  .contact-card a.c-value:hover{ text-decoration:underline; }
 
   .stats-band{background:var(--ink-teal-deep); padding:64px 0;}
   .stats-band .wrap{display:flex; justify-content:space-around; flex-wrap:wrap; gap:30px;}
@@ -799,7 +800,14 @@ export default function LmokhLanding() {
               <div className="c-icon">☎</div>
               <div>
                 <div className="c-label">هاتف / واتساب</div>
-                <div className="c-value">0557740360</div>
+                <a
+                  className="c-value"
+                  href="https://wa.me/213560505110"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  0560505110
+                </a>
               </div>
             </div>
             <div className="contact-card">

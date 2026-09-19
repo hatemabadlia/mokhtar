@@ -17,7 +17,7 @@ import {
   lessonCreatedAtMs,
 } from '../../data/platform';
 import CodeForm from './CodeForm';
-import { bunnyEmbedUrl, bunnyThumbnailUrl, fetchEmbedToken } from '../../lib/bunny';
+import { fetchPlayUrl, hasR2Video } from '../../lib/media';
 import useAuth from '../../hooks/useAuth';
 import { markLessonWatched } from '../../utils/watchHistory';
 import './lessons.css';
@@ -101,32 +101,34 @@ export default function WatchLesson() {
   const groupKey = lesson ? groupKeyForLesson(lesson) : '';
   const unlocked = (lesson ? isLessonUnlocked(lesson, { unlockedGroups }) : false) || justUnlocked;
   const backTo = '/app/lessons';
-  // New-style lessons are hosted on Bunny Stream (videoId only); older ones
-  // have a direct Firebase Storage URL.
-  // المشغّل يحتاج توكنًا موقّعًا من الـ Worker (Token Authentication في Bunny):
+  // الدروس الجديدة على R2 (videoKey): المشغّل يحتاج رابطًا موقّعًا من الـ Worker
   // يُمنح فقط إذا كان القسم مفتوحًا فعلًا في حساب الطالب — لا يكفي فتح الواجهة.
-  const [embed, setEmbed] = useState({ url: '', status: 'idle' }); // idle | loading | ready | locked | error
+  // الدروس القديمة جدًا لها videoURL مباشر (Firebase Storage).
+  const r2Video = hasR2Video(lesson);
+  const [play, setPlay] = useState({ url: '', type: '', status: 'idle', retry: 0 }); // idle | loading | ready | locked | error
   useEffect(() => {
-    if (!lesson?.bunnyVideoId || !unlocked || !user) return;
+    if (!r2Video || !unlocked || !user) return;
     let cancelled = false;
-    setEmbed({ url: '', status: 'loading' });
-    fetchEmbedToken(lesson.id)
+    setPlay((p) => ({ ...p, url: '', status: 'loading' }));
+    fetchPlayUrl(lesson.id)
       .then((d) => {
         if (cancelled) return;
-        setEmbed({ url: d.embedUrl || bunnyEmbedUrl(d.videoId, d.token, d.expires), status: 'ready' });
+        setPlay((p) => ({ ...p, url: d.url, type: d.videoType || 'video/mp4', status: 'ready' }));
       })
       .catch((e) => {
         if (cancelled) return;
-        setEmbed({ url: '', status: e?.code === 'locked' ? 'locked' : 'error' });
+        setPlay((p) => ({ ...p, url: '', status: e?.code === 'locked' ? 'locked' : 'error' }));
       });
     return () => {
       cancelled = true;
     };
-  }, [lesson?.id, lesson?.bunnyVideoId, unlocked, user, justUnlocked]);
-  const embedUrl = embed.status === 'ready' ? embed.url : '';
-  const posterUrl = lesson?.bunnyVideoId
-    ? bunnyThumbnailUrl(lesson.bunnyVideoId)
-    : (lesson?.thumbnailURL || undefined);
+  }, [lesson?.id, r2Video, unlocked, user, justUnlocked, play.retry]);
+  const playUrl = play.status === 'ready' ? play.url : '';
+  // إن انتهت صلاحية الرابط الموقّع (6 ساعات) أثناء المشاهدة: نطلب رابطًا جديدًا مرة واحدة.
+  const onVideoError = () => {
+    setPlay((p) => (p.retry < 1 ? { ...p, retry: p.retry + 1 } : { ...p, status: 'error' }));
+  };
+  const posterUrl = lesson?.thumbnailURL || undefined;
 
   // سجّل الدرس كمشاهَد محليًا بمجرد عرضه مفتوحًا (بعد فك الرمز) —
   // يستخدمه «سجل المشاهدة» في صفحة التقدّم.
@@ -201,32 +203,36 @@ export default function WatchLesson() {
         {!loading && !error && lesson && unlocked && (
           <>
             <div className="naj-video-wrap">
-              {lesson.bunnyVideoId && embed.status === 'loading' && (
+              {r2Video && play.status === 'loading' && (
                 <div className="naj-video-state"><span className="naj-spinner big" /><p>جارٍ تجهيز المشغّل…</p></div>
               )}
-              {lesson.bunnyVideoId && embed.status === 'locked' && (
+              {r2Video && play.status === 'locked' && (
                 <div className="naj-video-state">
                   <p className="naj-msg naj-msg-error" style={{ maxWidth: 420 }}>
                     هذا القسم غير مفتوح في حسابك بعد. إن أدخلت رمزًا على جهاز آخر فأعد إدخاله هنا، أو تواصل معنا.
                   </p>
                 </div>
               )}
-              {lesson.bunnyVideoId && embed.status === 'error' && (
+              {r2Video && play.status === 'error' && (
                 <div className="naj-video-state">
                   <p className="naj-msg naj-msg-error" style={{ maxWidth: 420 }}>تعذّر تجهيز المشغّل — تحقق من الاتصال ثم أعد تحميل الصفحة.</p>
                 </div>
               )}
-              {embedUrl ? (
-                <iframe
+              {playUrl ? (
+                <video
+                  key={playUrl}
                   className="naj-video"
-                  src={embedUrl}
-                  title={lesson.title}
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              ) : lesson.bunnyVideoId ? null : (
+                  controls
+                  controlsList="nodownload"
+                  preload="metadata"
+                  playsInline
+                  poster={posterUrl}
+                  onError={onVideoError}
+                  onContextMenu={(e) => e.preventDefault()}
+                >
+                  <source src={playUrl} type={play.type || 'video/mp4'} />
+                </video>
+              ) : r2Video ? null : lesson.videoURL ? (
                 <video
                   className="naj-video"
                   controls
@@ -235,6 +241,10 @@ export default function WatchLesson() {
                   poster={posterUrl}
                   src={lesson.videoURL}
                 />
+              ) : (
+                <div className="naj-video-state">
+                  <p className="naj-msg naj-msg-error" style={{ maxWidth: 420 }}>هذا الدرس بلا فيديو حاليًا — يُعاد رفعه قريبًا.</p>
+                </div>
               )}
               <span className="naj-live-chip">
                 <span className="live-dot" />
