@@ -15,6 +15,7 @@ import {
 } from '../../data/platform';
 import { getWatchedLessonIds, getWatchedLessonIdSet } from '../../utils/watchHistory';
 import { isGroupUnlocked as isLocalUnlock } from '../../firebase/access';
+import { syncLocalUnlocks } from '../../lib/access';
 
 const RING_R = 52;
 const RING_CIRC = 2 * Math.PI * RING_R;
@@ -58,8 +59,10 @@ export default function Progress() {
       // المفاتيح الجديدة (per module): تُحفظ في users/{uid}.unlockedGroups
       try {
         const snap = await getDoc(doc(db, 'users', user.uid));
-        if (!cancelled && snap.exists() && Array.isArray(snap.data().unlockedGroups)) {
-          setUnlockedGroups(snap.data().unlockedGroups);
+        if (!cancelled) {
+          const groups = snap.exists() && Array.isArray(snap.data().unlockedGroups) ? snap.data().unlockedGroups : [];
+          syncLocalUnlocks(groups); // Firestore هو المصدر — النسخة المحلية تتبعه
+          setUnlockedGroups(groups);
         }
       } catch {
         // دون اتصال / صلاحيات — نعتمد على localStorage فقط

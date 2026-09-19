@@ -6,15 +6,21 @@ import { db } from './config';
  * Uses values passed explicitly first (e.g. the typed name during signup),
  * then falls back to the Firebase Auth user object.
  */
-export const buildUserPayload = (user, extra = {}) => ({
-  uid: user?.uid || extra.uid || '',
-  name: extra.name ?? user?.displayName ?? '',
-  email: user?.email || extra.email || '',
-  provider: extra.provider || user?.providerData?.[0]?.providerId || 'password',
-  level: extra.level ?? '',
-  photoURL: user?.photoURL || '',
-  emailVerified: user?.emailVerified || false,
-});
+export const buildUserPayload = (user, extra = {}) => {
+  const payload = {
+    uid: user?.uid || extra.uid || '',
+    email: user?.email || extra.email || '',
+    provider: extra.provider || user?.providerData?.[0]?.providerId || 'password',
+    photoURL: user?.photoURL || '',
+    emailVerified: user?.emailVerified || false,
+  };
+  // name/level تُكتب فقط عند توفرها — وإلا تبقى القيمة المحفوظة في Firestore كما هي
+  // (تسجيل الدخول العادي لا يجب أن يمسح المستوى الذي اختاره الطالب).
+  const name = extra.name ?? user?.displayName;
+  if (name) payload.name = name;
+  if (extra.level) payload.level = extra.level;
+  return payload;
+};
 
 /**
  * Saves (or updates) the complete user profile in Firestore at `users/{uid}`.

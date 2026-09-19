@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase/config';
@@ -41,6 +41,8 @@ function getInitials(name) {
 
 export default function Profile() {
   const navigate = useNavigate();
+  // مُحدِّث المستوى في DashboardLayout — حتى تنعكس التغييرات فورًا على الدروس/الاختبارات/الامتحانات
+  const { setLevel: setLayoutLevel } = useOutletContext() || {};
   const mountedRef = useRef(true);
 
   const [user, setUser] = useState(null);
@@ -119,6 +121,7 @@ export default function Profile() {
     // احفظ محليًا أولًا ثم زامن — الاختيار يعمل حتى لو تعذّر الوصول لـ Firestore
     saveSavedLevel(user?.uid, pickedLevel);
     setLevelId(pickedLevel);
+    setLayoutLevel?.(pickedLevel);
     setLevelPickerOpen(false);
     flash('تم تحديث مستواك ✓');
     saveUserToFirestore(user, { level: pickedLevel }).catch(() => {
@@ -163,6 +166,11 @@ export default function Profile() {
     setPickedLevel(levelId);
     setLevelPickerOpen(true);
   }
+
+  // بلا مستوى محفوظ (وصل من «اختر مستواك الآن») → افتح المحدِّد مباشرة
+  useEffect(() => {
+    if (!loadingProfile && !levelId) setLevelPickerOpen(true);
+  }, [loadingProfile, levelId]);
 
   const levelMeta = getLevel(levelId);
 

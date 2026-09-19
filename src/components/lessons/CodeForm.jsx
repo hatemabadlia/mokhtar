@@ -25,7 +25,18 @@ export default function CodeForm({ groupLabel, scope, onSuccess, onCancel }) {
     setLoading(true);
     const res = await validateAccessCode(code, scope);
     if (res.ok) {
-      onSuccess(res);
+      // الحفظ على الخادم (persistUnlock) قد يفشل — نعرض الخطأ هنا بدل فتح وهمي
+      try {
+        await onSuccess(res);
+      } catch (e) {
+        setError(
+          e?.code === 'permission-denied'
+            ? 'الرمز استُعمل بالكامل أو لا يخص هذا القسم — تواصل معنا.'
+            : e?.message && !e?.code
+              ? e.message
+              : 'تعذّر تفعيل الرمز على حسابك — تحقق من الاتصال ثم أعد المحاولة.'
+        );
+      }
     } else if (res.error === 'network') {
       setError('تعذّر التحقق من الرمز — تحقق من اتصالك بالإنترنت.');
     } else if (res.error === 'exhausted') {

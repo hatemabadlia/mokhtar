@@ -124,7 +124,7 @@ export default function Home() {
       {isNew && (
         <div className="new-banner">
           <p>أنت مستخدم جديد — لبدء رحلتك، اختر مستواك الدراسي أولًا (BEM · 1AS · 2AS · BAC).</p>
-          <Link to="/level">اختر مستواك الآن</Link>
+          <Link to="/app/profile">اختر مستواك الآن</Link>
         </div>
       )}
 

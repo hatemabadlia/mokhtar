@@ -27,7 +27,7 @@ export default function DashboardLessons() {
           <div className="dl-ico">📚</div>
           <h2>اختر مستواك أولًا</h2>
           <p>لبدء الدروس، حدّد مستواك الدراسي (BEM · 1AS · 2AS · BAC) وسنعرض لك دروسه مرتبة حسب الفصول أو الوحدات.</p>
-          <Link className="dl-btn" to="/level">
+          <Link className="dl-btn" to="/app/profile">
             اختر مستواك الآن
           </Link>
         </div>

@@ -5,7 +5,7 @@ import {
   getDocs,
   doc,
   getDoc,
-  addDoc,
+  setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './config';
@@ -28,11 +28,15 @@ export async function fetchLessonById(id) {
 }
 
 /**
- * إنشاء طلب وصول (كتابة عامة — مسموحة في القواعد):
- * - غير البكالوريا: { name, email, level, module, trimester, status, createdAt }
- * - البكالوريا:     { name, email, level, module, unit, status, createdAt }
+ * إنشاء طلب وصول — معرّف المستند ثابت: `${uid}_${groupKey}` (تفرضه القواعد)
+ * فلا يمكن للطالب إرسال أكثر من طلب واحد لنفس القسم؛ طلب مرفوض يمكن إعادة إرساله.
+ * - غير البكالوريا: { uid, name, email, level, module, trimester, status, createdAt }
+ * - البكالوريا:     { uid, name, email, level, module, unit, status, createdAt }
+ * يرمي خطأ بكود 'duplicate' إذا كان هناك طلب قيد المراجعة (أو مقبول) لنفس القسم.
  */
 export async function submitAccessRequest({ uid, name, email, phone, level, module, trimester, unit, groupKey, scope }) {
+  if (!uid) throw Object.assign(new Error('auth'), { code: 'auth' });
+  if (!groupKey) throw Object.assign(new Error('groupKey'), { code: 'invalid' });
   const payload = {
     name: name.trim(),
     email: email.trim(),
@@ -54,7 +58,15 @@ export async function submitAccessRequest({ uid, name, email, phone, level, modu
   } else if (trimester) {
     payload.trimester = trimester;
   }
-  return addDoc(collection(db, 'accessRequests'), payload);
+  const ref = doc(db, 'accessRequests', `${uid}_${groupKey}`);
+  try {
+    // setDoc بلا merge: إنشاء، أو استبدال طلب مرفوض (القواعد ترفض لمس طلب pending/approved)
+    await setDoc(ref, payload);
+  } catch (e) {
+    if (e?.code === 'permission-denied') throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
+    throw e;
+  }
+  return ref;
 }
 /**
  * طلبات الوصول الخاصة بالمستخدم (لعرض «قيد المراجعة» ومنع التكرار).

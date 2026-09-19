@@ -26,7 +26,7 @@ export default function CodeModal({ group, user, onUnlocked, onClose }) {
         }}
         onCancel={onClose}
         onSuccess={async (res) => {
-          // localStorage فورًا + Firestore (users/{uid}.unlockedGroups) حتى يبقى الفتح على كل الأجهزة
+          // Firestore (users/{uid}.unlockedGroups) أولًا — يرمي خطأً يعرضه CodeForm إن فشل
           await persistUnlock(user, res.key, res.code);
           onUnlocked?.(res.key);
           onClose();

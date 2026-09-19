@@ -67,8 +67,14 @@ export default function RequestModal({ group, existingRequest = null, onSubmitte
       });
       onSubmitted?.(group.key);
       setDone(true);
-    } catch {
-      setError('تعذّر إرسال الطلب — حاول مرة أخرى.');
+    } catch (e) {
+      if (e?.code === 'duplicate') {
+        // طلب سابق لنفس القسم قيد المراجعة — نعرض حالته بدل رسالة خطأ
+        onSubmitted?.(group.key);
+        setDone(true);
+      } else {
+        setError('تعذّر إرسال الطلب — حاول مرة أخرى.');
+      }
     } finally {
       setLoading(false);
     }

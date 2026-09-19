@@ -72,7 +72,7 @@ npm run preview
 
 - **قراءة:** `lessons`
 - **قراءة (getDoc بالمعرّف):** `accessCodes`
-- **كتابة (addDoc فقط):** `accessRequests`
+- **كتابة (setDoc بمعرّف `uid_groupKey`):** `accessRequests` — طلب واحد لكل قسم لكل طالب (تفرضه القواعد)
 
 طلب الوصول المرسل:
 
@@ -95,8 +95,8 @@ npm run preview
 
 1. قراءة `lessons` — للجميع.
 2. قراءة `accessCodes` (بالوثيقة) — للجميع.
-3. إنشاء مستند في `accessRequests` — كتابة عامة دون مصادقة.
-4. قراءة عامة من Firebase Storage (روابط الفيديو/الصور بلا رموز).
+3. إنشاء مستند في `accessRequests` — للمسجّلين فقط، بمعرّف `uid_groupKey`.
+4. الفيديو وملفات PDF على R2 تُقرأ فقط برابط موقّع من الـ Worker (`/media/play-url` و`/media/file-url`) — مربوط بحساب الطالب وصالح ساعة واحدة.
 
 > ملاحظة: إذا ظهرت `permission-denied` فأخبر فريق الإدارة — **لا تُعدَّل القواعد من هذا المشروع**.
 

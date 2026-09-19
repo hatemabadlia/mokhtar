@@ -8,6 +8,7 @@ import {
   groupValueForLesson,
   isLessonUnlocked,
   persistUnlock,
+  syncLocalUnlocks,
 } from '../../lib/access';
 import {
   LEVEL_FULL_LABELS,
@@ -45,9 +46,10 @@ export default function WatchLesson() {
     let cancelled = false;
     getDoc(doc(db, 'users', user.uid))
       .then((snap) => {
-        if (!cancelled && snap.exists() && Array.isArray(snap.data().unlockedGroups)) {
-          setUnlockedGroups(snap.data().unlockedGroups);
-        }
+        if (cancelled) return;
+        const groups = snap.exists() && Array.isArray(snap.data().unlockedGroups) ? snap.data().unlockedGroups : [];
+        syncLocalUnlocks(groups); // Firestore هو المصدر — النسخة المحلية تتبعه
+        setUnlockedGroups(groups);
       })
       .catch(() => {});
     return () => {
@@ -130,15 +132,24 @@ export default function WatchLesson() {
   };
   const posterUrl = lesson?.thumbnailURL || undefined;
 
-  // سجّل الدرس كمشاهَد محليًا بمجرد عرضه مفتوحًا (بعد فك الرمز) —
-  // يستخدمه «سجل المشاهدة» في صفحة التقدّم.
-  // هذا التأثير يقع بعد تعريف unlocked لأن مصفوفة الاعتماديات تقرأ
-  // قيمة unlocked أثناء الرسم — لا يُمكن قراءتها قبل تهيئتها في جسم الدالة.
-  useEffect(() => {
-    if (user && lesson && unlocked && !loading && !error) {
+  // سجّل الدرس كمشاهَد فقط بعد مشاهدة فعلية (≥ 80% من الفيديو أو حتى النهاية) —
+  // لا يكفي فتح الصفحة. يستخدمه «سجل المشاهدة» في صفحة التقدّم.
+  const [watchedMarked, setWatchedMarked] = useState(false);
+  useEffect(() => { setWatchedMarked(false); }, [id]);
+  const onVideoProgress = (e) => {
+    if (watchedMarked || !user || !lesson) return;
+    const v = e.currentTarget;
+    if (!v.duration || !Number.isFinite(v.duration)) return;
+    if (v.currentTime / v.duration >= 0.8) {
       markLessonWatched(user.uid, lesson.id);
+      setWatchedMarked(true);
     }
-  }, [user, lesson, unlocked, loading, error]);
+  };
+  const onVideoEnded = () => {
+    if (watchedMarked || !user || !lesson) return;
+    markLessonWatched(user.uid, lesson.id);
+    setWatchedMarked(true);
+  };
 
   const isBac = lesson?.level === 'bac';
 
@@ -228,6 +239,8 @@ export default function WatchLesson() {
                   playsInline
                   poster={posterUrl}
                   onError={onVideoError}
+                  onTimeUpdate={onVideoProgress}
+                  onEnded={onVideoEnded}
                   onContextMenu={(e) => e.preventDefault()}
                 >
                   <source src={playUrl} type={play.type || 'video/mp4'} />
@@ -240,6 +253,8 @@ export default function WatchLesson() {
                   preload="metadata"
                   poster={posterUrl}
                   src={lesson.videoURL}
+                  onTimeUpdate={onVideoProgress}
+                  onEnded={onVideoEnded}
                 />
               ) : (
                 <div className="naj-video-state">
@@ -380,8 +395,9 @@ export default function WatchLesson() {
                     groupValue: groupValueForLesson(lesson),
                     isBac: lesson.level === 'bac',
                   }}
-                  onSuccess={(res) => {
-                    persistUnlock(user, res.key, res.code);
+                  onSuccess={async (res) => {
+                    await persistUnlock(user, res.key, res.code);
+                    setUnlockedGroups((prev) => (prev.includes(res.key) ? prev : [...prev, res.key]));
                     setJustUnlocked(true);
                   }}
                 />

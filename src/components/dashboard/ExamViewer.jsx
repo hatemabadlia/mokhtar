@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { db } from '../../firebase/config';
+import { fetchFileUrl, hasR2File } from '../../lib/media';
 import { MODULE_LABELS, LEVEL_FULL_LABELS, TRIMESTER_LABELS } from '../../data/platform';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -53,15 +54,41 @@ export default function ExamViewer() {
     };
   }, [id]);
 
-  // 2) تحميل ملف PDF
+  // 2) رابط الملف: ملفات R2 تحتاج رابطًا موقّعًا من الـ Worker (مربوطًا بحساب الطالب)،
+  //    الملفات القديمة لها pdfURL مباشر.
+  const [fileUrl, setFileUrl] = useState('');
   useEffect(() => {
-    if (!exam?.pdfURL) return;
+    if (!exam) return;
+    let cancelled = false;
+    setFileUrl('');
+    if (!hasR2File(exam)) {
+      if (exam.pdfURL) setFileUrl(exam.pdfURL);
+      return undefined;
+    }
+    fetchFileUrl(exam.id)
+      .then((d) => {
+        if (!cancelled) setFileUrl(d.url);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setError(e?.code === 'auth'
+          ? 'انتهت جلستك — أعد تسجيل الدخول لعرض الموضوع.'
+          : 'تعذّر تجهيز الملف — تحقق من الاتصال ثم أعد تحميل الصفحة.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [exam]);
+
+  // 3) تحميل ملف PDF
+  useEffect(() => {
+    if (!fileUrl) return;
     let cancelled = false;
     let task = null;
     setPdf(null);
     setNumPages(0);
     setRendered(0);
-    task = pdfjsLib.getDocument({ url: exam.pdfURL, withCredentials: false });
+    task = pdfjsLib.getDocument({ url: fileUrl, withCredentials: false });
     task.promise
       .then((d) => {
         if (cancelled) return;
@@ -75,9 +102,9 @@ export default function ExamViewer() {
       cancelled = true;
       task?.destroy?.();
     };
-  }, [exam?.pdfURL]);
+  }, [fileUrl]);
 
-  // 3) رسم كل الصفحات (تمرير متواصل) — يُعاد عند تغيير التكبير
+  // 4) رسم كل الصفحات (تمرير متواصل) — يُعاد عند تغيير التكبير
   useEffect(() => {
     if (!pdf || !pagesRef.current) return;
     let cancelled = false;

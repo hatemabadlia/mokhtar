@@ -305,7 +305,7 @@ export default function DashboardLayout() {
       </header>
 
       <main className="main">
-        <Outlet context={{ user, level, levelMeta }} />
+        <Outlet context={{ user, level, levelMeta, setLevel }} />
       </main>
     </div>
   );

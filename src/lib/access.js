@@ -1,5 +1,6 @@
 import { doc, getDoc, writeBatch, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { saveUserToFirestore } from '../firebase/userService';
 
 // Prefix used for the offline grant in localStorage.
 export const PREFIX = 'almokh_unlocked_';
@@ -73,6 +74,29 @@ export function unlockGroup(key) {
 }
 
 /**
+ * مزامنة النسخة المحلية مع Firestore (المصدر الوحيد للحقيقة):
+ * تُستدعى بعد كل قراءة ناجحة لـ users/{uid}.unlockedGroups —
+ * تُزيل أي مفتاح محلي غير موجود في الحساب (بما فيها مفاتيح najah_ القديمة)
+ * حتى لا تعرض الواجهة 🔓 بينما الخادم يرفض المشاهدة.
+ */
+export function syncLocalUnlocks(unlockedGroups = []) {
+  const server = new Set(Array.isArray(unlockedGroups) ? unlockedGroups : []);
+  try {
+    const stale = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      const prefix = k.startsWith(PREFIX) ? PREFIX : k.startsWith(LEGACY_PREFIX) ? LEGACY_PREFIX : '';
+      if (prefix && !server.has(k.slice(prefix.length))) stale.push(k);
+    }
+    stale.forEach((k) => localStorage.removeItem(k));
+    server.forEach((key) => localStorage.setItem(`${PREFIX}${key}`, 'granted'));
+  } catch {
+    // التخزين غير متاح — تجاهل
+  }
+}
+
+/**
  * هل درسٌ ما مفتوح؟ يغطي:
  * - مفتاح المجموعة: level_module_trimester | level_module_unit
  * - مفتاح المادة كاملة: level_module (يفتح كل دروس المادة بمفتاح واحد)
@@ -90,22 +114,28 @@ export function isLessonUnlocked(lesson, { unlockedGroups = [] } = {}) {
 }
 
 /**
- * حفظ الفتح: localStorage دائمًا + Firestore (users/{uid}) بأفضل جهد.
+ * حفظ الفتح: Firestore (users/{uid}) أولًا ثم localStorage كنسخة محلية.
  * قواعد Firestore لا تقبل إضافة مفتاح إلى unlockedGroups إلا مع
  * lastRedeem: { code, key } — وتتحقق هي بنفسها من أن الرمز صالح ويطابق المفتاح
  * (فلا يمكن للطالب فتح قسم من المتصفح بلا رمز حقيقي).
+ * يرمي خطأً إذا فشل الحفظ على الخادم — لأن الـ Worker لا يمنح رابط المشاهدة
+ * إلا بما هو مسجّل في الحساب، فلا معنى لفتح محلي بلا فتح حقيقي.
  */
 export async function persistUnlock(user, key, code) {
-  unlockGroup(key);
-  if (!user?.uid || !key || !code) return;
+  if (!user?.uid || !key || !code) throw new Error('يجب تسجيل الدخول لاستعمال الرمز.');
   const userRef = doc(db, 'users', user.uid);
   const normalized = String(code).trim().replace(/\s+/g, '').toUpperCase();
   const codeRef = doc(db, 'accessCodes', normalized);
-  try {
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) return; // الملف يُنشأ في الإعداد الأول — لا نفتح قبل ذلك
-    const before = Array.isArray(snap.data().unlockedGroups) ? snap.data().unlockedGroups : [];
-    if (before.includes(key)) return;
+
+  let snap = await getDoc(userRef);
+  if (!snap.exists()) {
+    // الملف لم يُنشأ بعد (مثلًا دخول بجوجل ثم رمز مباشرة) — ننشئه ثم نفتح
+    await saveUserToFirestore(user);
+    snap = await getDoc(userRef);
+    if (!snap.exists()) throw new Error('تعذّر تجهيز حسابك — أعد تحميل الصفحة ثم حاول.');
+  }
+  const before = Array.isArray(snap.data().unlockedGroups) ? snap.data().unlockedGroups : [];
+  if (!before.includes(key)) {
     // دفعة واحدة: فتح القسم + تسجيل استعمال الرمز (القواعد تتحقق من الاثنين معًا)
     const batch = writeBatch(db);
     batch.update(userRef, {
@@ -115,45 +145,6 @@ export async function persistUnlock(user, key, code) {
     });
     batch.update(codeRef, { usedBy: arrayUnion(user.uid), lastUsedAt: serverTimestamp() });
     await batch.commit();
-  } catch {
-    // القواعد/الشبكة — الفتح المحلي يكفي للاستمرار على هذا الجهاز
   }
-}
-
-/**
- * استعمال رمز الوصول لمادة محددة (أو لمجموعة محددة داخل المادة).
- * رمز «مادة كاملة» (بلا فصل/وحدة) يفتح كل دروس المادة؛ يرمي رسالة
- * واضحة إذا حاول مستخدم استعمال رمز مادة أخرى.
- */
-export async function redeemAccessCode({ user, code, level, module, groupValue, isBac }) {
-  const trimmed = (code || '').trim();
-  if (!trimmed) throw new Error('أدخل رمز الدخول.');
-
-  const ref = doc(db, 'accessCodes', trimmed);
-  let snap;
-  try {
-    snap = await getDoc(ref);
-  } catch (e) {
-    // قواعد Firestore ترفض `get` عندما لا يوجد المستند أو معطّل أو منتهي —
-    // كلها تنضمّ هنا كخطأ صلاحيات.
-    throw new Error('الرمز غير صالح أو منتهي الصلاحية.');
-  }
-  if (!snap.exists()) throw new Error('الرمز غير صالح.');
-
-  const data = snap.data();
-  if (data.level && data.level !== level) throw new Error('هذا الرمز لا يخص هذا المستوى.');
-  if (!data.module || data.module !== module) {
-    throw new Error('هذا الرمز لا يخص هذه المادة — كل مادة لها رمزها الخاص.');
-  }
-
-  const codeGroupValue = isBac ? String(data.unit || '').trim() : (data.trimester || '');
-  const askedGroup = groupValue == null ? '' : String(groupValue).trim();
-
-  if (codeGroupValue && askedGroup !== codeGroupValue) {
-    throw new Error(isBac ? 'هذا الرمز يخص وحدة أخرى.' : 'هذا الرمز يخص فصلاً آخر.');
-  }
-
-  const key = codeGroupValue ? groupKey(level, module, codeGroupValue) : groupKey(level, module);
-  await persistUnlock(user, key, trimmed);
-  return key;
+  unlockGroup(key);
 }

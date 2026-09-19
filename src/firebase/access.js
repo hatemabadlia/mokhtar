@@ -37,7 +37,10 @@ export async function validateAccessCode(rawCode, scope = {}) {
   let snap;
   try {
     snap = await getDoc(doc(db, 'accessCodes', code));
-  } catch {
+  } catch (e) {
+    // قواعد Firestore ترفض قراءة رمز غير موجود / معطّل / منتهٍ بـ permission-denied —
+    // هذا يعني «رمز غير صحيح» وليس مشكلة اتصال.
+    if (e?.code === 'permission-denied') return { ok: false, code };
     return { ok: false, code, error: 'network' };
   }
 

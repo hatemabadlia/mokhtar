@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { fetchLessonsByLevel, fetchMyAccessRequests } from '../../firebase/lessonsService';
 import { groupKey, isGroupUnlocked as isGroupUnlockedLocal } from '../../firebase/access';
+import { syncLocalUnlocks } from '../../lib/access';
 import useAuth from '../../hooks/useAuth';
 import {
   LEVEL_FULL_LABELS,
@@ -59,9 +60,10 @@ export default function LessonsContent({ level, embedded = false }) {
     let cancelled = false;
     getDoc(doc(db, 'users', user.uid))
       .then((snap) => {
-        if (!cancelled && snap.exists() && Array.isArray(snap.data().unlockedGroups)) {
-          setUnlockedGroups(snap.data().unlockedGroups);
-        }
+        if (cancelled) return;
+        const groups = snap.exists() && Array.isArray(snap.data().unlockedGroups) ? snap.data().unlockedGroups : [];
+        syncLocalUnlocks(groups); // Firestore هو المصدر — النسخة المحلية تتبعه
+        setUnlockedGroups(groups);
       })
       .catch(() => {
         // دون اتصال / صلاحيات — نعتمد على localStorage فقط
