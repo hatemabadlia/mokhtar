@@ -27,6 +27,17 @@ const toError = (code) => {
       'لا يوجد حساب بهذا البريد الإلكتروني.',
     'auth/wrong-password':
       'كلمة المرور غير صحيحة.',
+    // Firebase الحديث يُرجع هذا الرمز لأي بريد/كلمة مرور خاطئة (بدون تحديد أيهما)
+    'auth/invalid-credential':
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة. إن كنت أنشأت حسابك عبر Google فاستعمل زر Google.',
+    'auth/invalid-login-credentials':
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة. إن كنت أنشأت حسابك عبر Google فاستعمل زر Google.',
+    'auth/missing-password':
+      'أدخل كلمة المرور.',
+    'auth/user-disabled':
+      'هذا الحساب موقوف — تواصل معنا.',
+    'auth/operation-not-allowed':
+      'تسجيل الدخول بالبريد وكلمة المرور غير مفعّل في الإعدادات — تواصل مع الإدارة.',
     'auth/weak-password':
       'كلمة المرور قصيرة جدًا (6 أحرف على الأقل).',
     'auth/too-many-requests':
