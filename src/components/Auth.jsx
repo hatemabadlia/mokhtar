@@ -8,6 +8,8 @@ import {
   sendEmailVerification,
   updateProfile,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
 } from 'firebase/auth';
@@ -48,6 +50,12 @@ const toError = (code) => {
       'إعدادات المتصفح تمنع النوافذ المنبثقة — اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.',
     'auth/network-request-failed':
       'تعذّر الاتصال — تأكد من اتصالك بالإنترنت.',
+    // يظهر عند الاستضافة إذا لم يُضَف نطاق الموقع في
+    // Firebase Console → Authentication → Settings → Authorized domains
+    'auth/unauthorized-domain':
+      'نطاق الموقع غير مُصرَّح به لتسجيل الدخول عبر Google — تواصل مع الإدارة.',
+    'auth/internal-error':
+      'خطأ في إعدادات تسجيل الدخول عبر Google — تواصل مع الإدارة.',
   };
 
   return map[code] || 'حدث خطأ غير متوقع، حاول مجددًا.';
@@ -98,6 +106,28 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+
+  // ============================================================
+  // GOOGLE REDIRECT RESULT
+  // ============================================================
+  // عند رجوع المستخدم من صفحة Google (تدفّق إعادة التوجيه) نلتقط النتيجة هنا.
+  // لا يفعل شيئًا إذا لم يكن هناك تسجيل دخول معلّق.
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (!result?.user) return;
+
+        saveUserToFirestore(result.user, {
+          provider: 'google.com',
+          name: result.user.displayName || '',
+        }).catch(() => {
+          // Offline — onAuthStateChanged will handle the navigation
+        });
+      })
+      .catch((err) => {
+        setError(toError(err.code));
+      });
+  }, []);
 
   // ============================================================
   // CHECK AUTHENTICATED USER PROFILE
@@ -287,14 +317,13 @@ export default function Auth() {
     setInfo('');
     setLoading(true);
 
-    try {
-      const provider = new GoogleAuthProvider();
+    const provider = new GoogleAuthProvider();
 
+    try {
       // Popup flow — opens a Google popup and resolves once signed in.
-      // (This is the flow that works reliably; the console warning
-      //  "Cross-Origin-Opener-Policy policy would block the window.close
-      //  call" is a harmless message emitted by GOOGLE's own popup page —
-      //  it does NOT affect the login process.)
+      // (The console warning "Cross-Origin-Opener-Policy policy would block
+      //  the window.close call" is a harmless message emitted by GOOGLE's own
+      //  popup page — it does NOT affect the login process.)
       const result = await signInWithPopup(auth, provider);
 
       // Save Google profile to Firestore (best-effort — onAuthStateChanged
@@ -306,7 +335,26 @@ export default function Auth() {
         // Offline — onAuthStateChanged will handle the navigation
       });
     } catch (err) {
-      setError(toError(err.code));
+      // النوافذ المنبثقة تُحجب في كثير من المتصفحات عند الاستضافة (خاصة متصفحات
+      // الهاتف، والمواقع التي ترسل ترويسة Cross-Origin-Opener-Policy).
+      // في هذه الحالة ننتقل إلى تدفّق إعادة التوجيه الذي يعمل في كل المتصفحات.
+      const popupFailed =
+        err?.code === 'auth/popup-blocked' ||
+        err?.code === 'auth/cancelled-popup-request' ||
+        err?.code === 'auth/operation-not-supported-in-this-environment' ||
+        err?.code === 'auth/web-storage-unsupported';
+
+      if (popupFailed) {
+        try {
+          // يغادر الصفحة — النتيجة تُلتقط في getRedirectResult عند العودة.
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr) {
+          setError(toError(redirectErr.code));
+        }
+      } else {
+        setError(toError(err.code));
+      }
     } finally {
       setLoading(false);
     }
